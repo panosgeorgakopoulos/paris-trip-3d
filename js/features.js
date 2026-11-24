@@ -10,16 +10,92 @@ import { ctx, state, camCtrl, saveState, showToast, triggerSquash, spawnCelebrat
 import { flyCameraTo } from './controls.js';
 
 // =========================================================================
-// 1. LIVE GPS "YOU ARE HERE" 3D BEACON & WALKING DISTANCE
+// 1. LIVE GPS "YOU ARE HERE" 3D BEACON, DIRECTION CONE & WALKING DISTANCE
 // =========================================================================
 let gpsWatchId = null;
 let gpsMesh = null;
 let gpsPulseRing = null;
+let gpsHeadingPivot = null;
 let gpsWorldXZ = null;
+let gpsHeadingDeg = null;
+let gpsSmoothedRotY = 0;
+let orientationListening = false;
+
+function createHeadingConeTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 128;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(64, 64, 6, 64, 64, 64);
+  grad.addColorStop(0.0, 'rgba(62, 152, 255, 0.78)');
+  grad.addColorStop(0.45, 'rgba(62, 152, 255, 0.34)');
+  grad.addColorStop(0.85, 'rgba(62, 152, 255, 0.08)');
+  grad.addColorStop(1.0, 'rgba(62, 152, 255, 0.0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+function handleDeviceOrientation(ev) {
+  let heading = null;
+  if (typeof ev.webkitCompassHeading === 'number' && !Number.isNaN(ev.webkitCompassHeading)) {
+    // iOS Safari gives exact magnetic compass heading (0 = North, 90 = East)
+    heading = ev.webkitCompassHeading;
+  } else if (typeof ev.alpha === 'number' && !Number.isNaN(ev.alpha)) {
+    // Android Chrome / absolute orientation fallback
+    heading = (360 - ev.alpha) % 360;
+  }
+  if (heading !== null) gpsHeadingDeg = heading;
+}
+
+function startCompassOrientation() {
+  if (orientationListening || typeof window === 'undefined') return;
+  const attach = () => {
+    if (orientationListening) return;
+    window.addEventListener('deviceorientationabsolute', handleDeviceOrientation, true);
+    window.addEventListener('deviceorientation', handleDeviceOrientation, true);
+    orientationListening = true;
+  };
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // Must be called inside the user click gesture on iOS 13+ Safari!
+    DeviceOrientationEvent.requestPermission()
+      .then((res) => { if (res === 'granted') attach(); })
+      .catch(() => {});
+  } else {
+    attach();
+  }
+}
+
+function stopCompassOrientation() {
+  if (!orientationListening || typeof window === 'undefined') return;
+  window.removeEventListener('deviceorientationabsolute', handleDeviceOrientation, true);
+  window.removeEventListener('deviceorientation', handleDeviceOrientation, true);
+  orientationListening = false;
+  gpsHeadingDeg = null;
+}
 
 function ensureGpsBeaconMesh() {
   if (gpsMesh || !ctx.scene) return;
   const g = new THREE.Group();
+
+  // Google Maps-style Cobalt-Blue Directional Light Cone showing which way your phone faces!
+  gpsHeadingPivot = new THREE.Group();
+  gpsHeadingPivot.position.y = 0.06;
+  const coneGeo = new THREE.CircleGeometry(2.35, 22, Math.PI * 0.5 - Math.PI * 0.26, Math.PI * 0.52);
+  coneGeo.rotateX(-Math.PI / 2); // Sector now points directly along -Z (True North at rotY = 0!)
+  const coneMat = new THREE.MeshBasicMaterial({
+    map: createHeadingConeTexture(),
+    transparent: true,
+    opacity: 0.92,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const coneMesh = new THREE.Mesh(coneGeo, coneMat);
+  gpsHeadingPivot.add(coneMesh);
+  g.add(gpsHeadingPivot);
+
   // Crisp white collar + Apple/Google Maps pulsing cobalt-blue GPS dot
   const collar = new THREE.Mesh(
     new THREE.SphereGeometry(0.42, 16, 16),
@@ -77,7 +153,7 @@ function setGpsWorldPosition(lat, lon, isSimulated = false) {
   flyCameraTo(new THREE.Vector3(x, y + 0.6, z), new THREE.Vector3(-8, 10, 12));
   showToast(isSimulated
     ? `📍 Προεπισκόπηση GPS (Rue Saint-Hyacinthe 3)${distMsg}`
-    : `📍 Ζωντανό GPS στο Παρίσι${distMsg}`);
+    : `📍 Ζωντανό GPS + Πυξίδα στο Παρίσι${distMsg}`);
 }
 
 export function animateGpsBeacon(elapsed) {
@@ -86,6 +162,19 @@ export function animateGpsBeacon(elapsed) {
   const sc = 1 + phase * 2.4;
   gpsPulseRing.scale.set(sc, sc, 1);
   gpsPulseRing.material.opacity = (1 - phase) * 0.62;
+
+  // Smoothly align Google Maps blue direction cone with live DeviceOrientation compass heading
+  // (or camera forward direction when previewing on desktop without hardware compass!)
+  if (gpsHeadingPivot) {
+    const desiredRotY = gpsHeadingDeg !== null
+      ? -THREE.MathUtils.degToRad(gpsHeadingDeg)
+      : camCtrl.theta;
+    let diff = desiredRotY - gpsSmoothedRotY;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    gpsSmoothedRotY += diff * 0.16;
+    gpsHeadingPivot.rotation.y = gpsSmoothedRotY;
+  }
 }
 
 export function toggleLiveGPS(btnEl) {
@@ -103,10 +192,14 @@ export function toggleLiveGPS(btnEl) {
       navigator.geolocation.clearWatch(gpsWatchId);
       gpsWatchId = null;
     }
+    stopCompassOrientation();
     if (gpsMesh) gpsMesh.visible = false;
     showToast('📍 Ζωντανό GPS απενεργοποιήθηκε');
     return;
   }
+
+  // Request live iOS/Android compass direction cone permission right inside user tap gesture!
+  startCompassOrientation();
 
   if (!navigator.geolocation) {
     setGpsWorldPosition(48.8664, 2.3324, true);

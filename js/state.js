@@ -163,6 +163,9 @@ export const ctx = {
   transitGroup: null,
   transitLabels: [],
   gpsBeacon: null,
+  tuileriesWheel: null,
+  lafayetteTreeStar: null,
+  xmasLightMat: null,
   raycaster: new THREE.Raycaster(),
   pointer: new THREE.Vector2(),
 };

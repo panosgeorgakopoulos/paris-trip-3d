@@ -12,6 +12,12 @@ export function updateProjectedLabels() {
   const h = window.innerHeight;
   const isMobile = w < 768;
   const activeDay = state.activeDay;
+  const topPad = isMobile ? 105 : 64;
+  const botPad = isMobile ? 102 : 95;
+  const squadWalking = ctx.squadGuys.length > 0 && ctx.squadGuys[0].group.visible;
+
+  // Collect visible candidates for Priority-Sorted 2D Screen-Space Collision De-Cluttering!
+  const candidates = [];
 
   ctx.landmarkLabelEntries.forEach((entry) => {
     const el = entry.el;
@@ -25,10 +31,8 @@ export function updateProjectedLabels() {
     }
 
     const dist = ctx.camera.position.distanceTo(entry.pos);
-    const squadWalking = ctx.squadGuys.length > 0 && ctx.squadGuys[0].group.visible;
 
-    // Smart Zoom LOD for Panos, Kostas, Iakovos & Imbrixis + Ambient Parisian Places:
-    // Close-up while walking -> show all 4 individual names; zoomed out or on transit -> show combined group pill!
+    // Smart Zoom LOD for Panos, Kostas, Iakovos & Imbrixis + Ambient Parisian Places
     if (entry.isFriend && (!squadWalking || dist > 30)) {
       el.style.opacity = '0';
       el.style.pointerEvents = 'none';
@@ -46,14 +50,10 @@ export function updateProjectedLabels() {
     }
 
     tempProj.copy(entry.pos).project(ctx.camera);
-    const behind = tempProj.z > 1;
     const sx = (tempProj.x * 0.5 + 0.5) * w;
     const sy = (-tempProj.y * 0.5 + 0.5) * h;
 
-    // Avoid top bars & bottom dock overlap
-    const topPad = isMobile ? 105 : 64;
-    const botPad = isMobile ? 102 : 95;
-    if (behind || sx < -30 || sx > w + 30 || sy < topPad || sy > h - botPad) {
+    if (tempProj.z > 1 || sx < -30 || sx > w + 30 || sy < topPad || sy > h - botPad) {
       el.style.opacity = '0';
       el.style.pointerEvents = 'none';
       return;
@@ -68,17 +68,36 @@ export function updateProjectedLabels() {
       else if (activeDay === 'all' && dist > 145) alpha = 0.55;
       if (dist > 240) alpha = 0;
     }
+    if (alpha <= 0.02) {
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+      return;
+    }
 
-    el.style.transform = `translate3d(${sx}px, ${sy}px, 0) translate(-50%, -120%)`;
-    el.style.opacity = String(alpha);
-    el.style.pointerEvents = (!entry.isFriend && alpha > 0.25) ? 'auto' : 'none';
-    el.style.zIndex = entry.isFriend ? '29' : (entry.isSquad ? '28' : (isSelected ? '26' : (entry.isHome ? '24' : '15')));
+    // Priority hierarchy: Selected > Friends/Squad > Home > Itinerary Stops > Paris Places
+    let priority = 35;
+    if (isSelected) priority = 100;
+    else if (entry.isFriend) priority = 92;
+    else if (entry.isSquad) priority = 90;
+    else if (entry.isHome) priority = 85;
+    else if (entry.isStop) priority = (activeDay !== 'all' && entry.day === activeDay) ? 76 : 70;
+
+    candidates.push({
+      el,
+      sx,
+      sy,
+      dist,
+      alpha,
+      priority,
+      interactive: !entry.isFriend && alpha > 0.25,
+      zIndex: entry.isFriend ? '29' : (entry.isSquad ? '28' : (isSelected ? '26' : (entry.isHome ? '24' : '15'))),
+      translateY: '-120%',
+      mustShow: isSelected || entry.isFriend || entry.isSquad || entry.isHome,
+    });
   });
 
-  // Project 3D Paris Métro / RER / FLV Shuttle Station Badges when Transit Overlay is active!
+  // Add active 3D Paris Métro / RER / FLV Shuttle Station Badges to the same de-clutter pass!
   if (state.metroOverlay && ctx.transitLabels && ctx.transitLabels.length) {
-    const topPad = isMobile ? 105 : 64;
-    const botPad = isMobile ? 102 : 95;
     const maxDist = isMobile ? 96 : 138;
     ctx.transitLabels.forEach((t) => {
       const dist = ctx.camera.position.distanceTo(t.pos);
@@ -93,10 +112,66 @@ export function updateProjectedLabels() {
         t.el.style.opacity = '0';
         return;
       }
-      t.el.style.transform = `translate3d(${sx}px, ${sy}px, 0) translate(-50%, -115%)`;
-      t.el.style.opacity = dist > maxDist * 0.78 ? '0.6' : '0.96';
-      t.el.style.zIndex = '18';
+      candidates.push({
+        el: t.el,
+        sx,
+        sy,
+        dist,
+        alpha: dist > maxDist * 0.78 ? 0.6 : 0.96,
+        priority: 52,
+        interactive: false,
+        zIndex: '18',
+        translateY: '-115%',
+        mustShow: false,
+      });
     });
+  }
+
+  // Higher priority first; break ties by closer 3D camera distance
+  candidates.sort((a, b) => (b.priority - a.priority) || (a.dist - b.dist));
+
+  const placed = [];
+  const padX = isMobile ? 4 : 5;
+  const padY = isMobile ? 3 : 4;
+
+  for (let i = 0; i < candidates.length; i++) {
+    const c = candidates[i];
+    const el = c.el;
+    // Cache badge dimensions once (zero 60fps layout thrashing!)
+    if (!el._bw) {
+      const bw = el.offsetWidth || Math.max(68, Math.min(190, (el.textContent || '').trim().length * 7.2 + 24));
+      const bh = el.offsetHeight || 24;
+      el._bw = bw;
+      el._bh = bh;
+    }
+    const halfW = el._bw * 0.5 + padX;
+    const x1 = c.sx - halfW;
+    const x2 = c.sx + halfW;
+    const y2 = c.sy - el._bh * 0.15 + padY;
+    const y1 = y2 - el._bh - padY * 2;
+
+    let collides = false;
+    if (!c.mustShow) {
+      for (let j = 0; j < placed.length; j++) {
+        const p = placed[j];
+        if (x1 < p.x2 && x2 > p.x1 && y1 < p.y2 && y2 > p.y1) {
+          collides = true;
+          break;
+        }
+      }
+    }
+
+    if (collides) {
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+      continue;
+    }
+
+    placed.push({ x1, y1, x2, y2 });
+    el.style.transform = `translate3d(${c.sx.toFixed(1)}px, ${c.sy.toFixed(1)}px, 0) translate(-50%, ${c.translateY})`;
+    el.style.opacity = String(c.alpha);
+    el.style.pointerEvents = c.interactive ? 'auto' : 'none';
+    el.style.zIndex = c.zIndex;
   }
 }
 

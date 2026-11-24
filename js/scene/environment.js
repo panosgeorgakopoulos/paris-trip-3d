@@ -565,10 +565,16 @@ export function buildSeineAndBridges() {
 
 
 export function buildSkyAndTerrain() {
-  // Custom Atmospheric Gradient Sky Dome
+  // Photorealistic Procedural Atmospheric Real Sky Dome
+  // (Rayleigh zenith-to-horizon scatter, Mie sun/moon corona & disc, drifting multi-octave winter clouds & night stars)
   ctx.skyUniforms = {
     topColor: { value: liveLight.skyTop.clone() },
     horizonColor: { value: liveLight.skyHorizon.clone() },
+    uFogColor: { value: liveLight.fog.clone() },
+    uSunDir: { value: liveLight.dirPos.clone().normalize() },
+    uSunColor: { value: liveLight.dirColor.clone() },
+    uTime: { value: 0 },
+    uNightFactor: { value: liveLight.starOpacity },
   };
   const skyMat = new THREE.ShaderMaterial({
     uniforms: ctx.skyUniforms,
@@ -583,18 +589,114 @@ export function buildSkyAndTerrain() {
     fragmentShader: `
       uniform vec3 topColor;
       uniform vec3 horizonColor;
+      uniform vec3 uFogColor;
+      uniform vec3 uSunDir;
+      uniform vec3 uSunColor;
+      uniform float uTime;
+      uniform float uNightFactor;
       varying vec3 vWorldPos;
+
+      float hash21(vec2 p) {
+        p = fract(p * vec2(234.34, 435.345));
+        p += dot(p, p + 34.23);
+        return fract(p.x * p.y);
+      }
+
+      float vnoise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        float a = hash21(i);
+        float b = hash21(i + vec2(1.0, 0.0));
+        float c = hash21(i + vec2(0.0, 1.0));
+        float d = hash21(i + vec2(1.0, 1.0));
+        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+      }
+
+      float fbm(vec2 p) {
+        float v = 0.0;
+        float a = 0.5;
+        mat2 rot = mat2(0.80, 0.60, -0.60, 0.80);
+        for (int i = 0; i < 4; i++) {
+          v += a * vnoise(p);
+          p = rot * p * 2.04 + vec2(17.1, 31.7);
+          a *= 0.5;
+        }
+        return v;
+      }
+
       void main() {
-        float h = normalize(vWorldPos).y;
-        float f = pow(max(h, 0.0), 0.55);
-        vec3 col = mix(horizonColor, topColor, f);
+        vec3 dir = normalize(vWorldPos);
+        float h = dir.y;
+        float hClamped = max(h, 0.0);
+
+        // 1. Atmospheric Rayleigh Zenith-to-Horizon Gradient + Horizon Haze Band
+        float zenithPow = pow(hClamped, 0.52);
+        vec3 col = mix(horizonColor, topColor, zenithPow);
+
+        vec3 sunDir = normalize(uSunDir);
+        float sunDot = dot(dir, sunDir);
+        float dayMask = clamp(1.0 - uNightFactor * 1.15, 0.0, 1.0);
+        float nightMask = clamp((uNightFactor - 0.15) * 1.35, 0.0, 1.0);
+
+        // 2. Solar Mie Atmospheric Scattering Halo + Sunset Horizon Glow
+        float horizonBand = exp(-abs(hClamped) * 6.5);
+        float sunGlowWide = pow(max(sunDot, 0.0), 5.0);
+        float sunGlowTight = pow(max(sunDot, 0.0), 64.0);
+        float sunDisc = smoothstep(0.99925, 0.99972, sunDot);
+        col += uSunColor * (sunGlowWide * 0.26 * (0.4 + 0.6 * horizonBand) + sunGlowTight * 0.42) * dayMask;
+        col += mix(uSunColor, vec3(1.0, 0.98, 0.92), 0.7) * sunDisc * 1.45 * dayMask;
+
+        // 3. Soft Silver Winter Moon & Subtle Lunar Halo at Night
+        vec3 moonDir = normalize(vec3(-sunDir.x * 0.65, max(0.32, sunDir.y * 0.72), -sunDir.z * 0.75));
+        float moonDot = dot(dir, moonDir);
+        float moonHalo = pow(max(moonDot, 0.0), 18.0) * 0.22;
+        float moonDisc = smoothstep(0.99945, 0.99975, moonDot);
+        col += vec3(0.76, 0.85, 1.0) * moonHalo * nightMask;
+        col += vec3(0.96, 0.97, 1.0) * moonDisc * 1.15 * nightMask;
+
+        // 4. Procedural Multi-Octave Drifting Parisian Winter Clouds
+        float cloudAlpha = 0.0;
+        if (h > 0.015) {
+          vec2 cloudUV = dir.xz / (h + 0.16);
+          vec2 wind = vec2(uTime * 0.012, uTime * 0.005);
+          float cBase = fbm(cloudUV * 0.62 + wind);
+          float cDetail = fbm(cloudUV * 1.55 - wind * 0.7);
+          float density = smoothstep(0.47, 0.78, cBase * 0.76 + cDetail * 0.28);
+          float horizonFade = smoothstep(0.015, 0.22, h) * smoothstep(0.98, 0.55, h);
+          cloudAlpha = density * horizonFade * mix(0.76, 0.44, nightMask);
+
+          // Cloud self-shadowing & golden dusk / cool morning / moonlit rim lighting
+          float cLit = clamp(fbm(cloudUV * 0.62 + wind + sunDir.xz * 0.14) * 1.25 - cBase * 0.45 + 0.35, 0.0, 1.0);
+          vec3 cloudShadowCol = mix(topColor * 0.88, horizonColor * 0.75, 0.45);
+          vec3 cloudSunCol = mix(vec3(0.97, 0.96, 0.95), uSunColor * 1.25, 0.62);
+          vec3 cloudNightCol = mix(topColor * 1.25, vec3(0.32, 0.40, 0.56), 0.45 + 0.35 * max(moonDot, 0.0));
+          vec3 cloudDayCol = mix(cloudShadowCol, cloudSunCol, clamp(cLit + sunGlowWide * 0.45, 0.0, 1.0));
+          vec3 cloudCol = mix(cloudDayCol, cloudNightCol, nightMask);
+          col = mix(col, cloudCol, cloudAlpha);
+        }
+
+        // 5. Fine Crisp High-Altitude Sky Stars (masked behind clouds at night)
+        if (nightMask > 0.05 && h > 0.06) {
+          vec2 starGrid = floor(dir.xz / (h + 0.25) * 85.0);
+          float starSeed = hash21(starGrid);
+          if (starSeed > 0.9935) {
+            float tw = 0.55 + 0.45 * sin(uTime * 2.2 + starSeed * 250.0);
+            col += vec3(0.95, 0.96, 1.0) * tw * nightMask * (1.0 - cloudAlpha * 0.92) * smoothstep(0.06, 0.28, h) * 0.85;
+          }
+        }
+
+        // 6. Seamless Atmospheric Fog Blend right along the Paris Horizon
+        float fogBlend = smoothstep(0.11, -0.02, h);
+        col = mix(col, uFogColor, fogBlend * 0.85);
+
         gl_FragColor = vec4(col, 1.0);
       }
     `,
     side: THREE.BackSide,
     depthWrite: false,
   });
-  ctx.scene.add(new THREE.Mesh(new THREE.SphereGeometry(460, 32, 20), skyMat));
+  ctx.scene.add(new THREE.Mesh(new THREE.SphereGeometry(460, 48, 32), skyMat));
 
   // Ensure Seine centerline data is ready so terrain carves the riverbed & paints quays accurately!
   initSeineCurveData();

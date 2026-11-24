@@ -186,6 +186,11 @@ function animate() {
   if (ctx.skyUniforms) {
     ctx.skyUniforms.topColor.value.copy(liveLight.skyTop);
     ctx.skyUniforms.horizonColor.value.copy(liveLight.skyHorizon);
+    ctx.skyUniforms.uFogColor.value.copy(liveLight.fog);
+    ctx.skyUniforms.uSunDir.value.copy(liveLight.dirPos).normalize();
+    ctx.skyUniforms.uSunColor.value.copy(liveLight.dirColor);
+    ctx.skyUniforms.uNightFactor.value = liveLight.starOpacity;
+    if (!prefersReducedMotion) ctx.skyUniforms.uTime.value = elapsed;
   }
   ctx.scene.fog.color.copy(liveLight.fog);
   ctx.scene.fog.density = liveLight.fogDensity;
@@ -252,8 +257,14 @@ function animate() {
     }
   }
 
-  // 6. Moulin Rouge Windmill & Home Beacon
+  // 6. Moulin Rouge Windmill, Home Beacon & December Paris Christmas Decor Animations!
   if (ctx.moulinSails && !prefersReducedMotion) ctx.moulinSails.rotation.z = -elapsed * 0.82;
+  if (ctx.tuileriesWheel && !prefersReducedMotion) ctx.tuileriesWheel.rotation.z = elapsed * 0.24;
+  if (ctx.lafayetteTreeStar && !prefersReducedMotion) ctx.lafayetteTreeStar.rotation.y = elapsed * 1.4;
+  if (ctx.xmasLightMat) {
+    const nightBoost = 0.45 + liveLight.windowGlow * 0.95;
+    ctx.xmasLightMat.emissiveIntensity = nightBoost + (prefersReducedMotion ? 0 : Math.sin(elapsed * 2.8) * 0.14);
+  }
   if (ctx.homeBeacon) {
     ctx.homeBeacon.rotation.y = elapsed * 1.0;
     ctx.homeBeacon.position.y = 3.55 + Math.sin(elapsed * 2.2) * 0.22;
@@ -331,12 +342,38 @@ window.addEventListener('load', () => {
     console.error('Paris 3D init error:', err);
     const loader = document.getElementById('intro-loader');
     if (loader) {
+      const errMsg = (err && err.message) ? String(err.message) : String(err || 'Unknown error');
+      const isWebGL = /webgl|context|canvas|gpu/i.test(errMsg);
+      const safeErr = errMsg.replace(/[<>&"']/g, (ch) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[ch]));
       loader.innerHTML = `
-        <div class="text-center px-6">
-          <h2 class="font-serif text-3xl text-champagne mb-2">Paris 3D</h2>
-          <p class="text-sm text-ivory/80">Δεν ήταν δυνατή η φόρτωση WebGL σε αυτή τη συσκευή. Παρακαλούμε ενεργοποιήστε το hardware acceleration.</p>
+        <div class="text-center px-6 max-w-md space-y-3">
+          <h2 class="font-serif text-3xl text-champagne">Paris 3D</h2>
+          <p class="text-sm text-ivory/85 leading-relaxed">${isWebGL
+            ? 'Δεν ήταν δυνατή η εκκίνηση του WebGL σε αυτή τη συσκευή. Ελέγξτε ότι το hardware acceleration είναι ενεργό.'
+            : 'Παρουσιάστηκε σφάλμα κατά τη φόρτωση της εφαρμογής (πιθανώς παλιά cache).'}</p>
+          <p class="text-[11px] font-mono text-roseParis/90 bg-white/5 border border-white/10 rounded-xl px-3 py-2 break-words">${safeErr}</p>
+          <button id="btn-clear-cache-reload" type="button"
+            class="px-4 py-2.5 rounded-2xl bg-champagne text-midnight font-bold text-xs shadow-lg active:scale-95 transition-all">
+            🔄 Καθαρισμός Cache &amp; Επαναφόρτωση
+          </button>
         </div>
       `;
+      const btn = document.getElementById('btn-clear-cache-reload');
+      if (btn) {
+        btn.addEventListener('click', async () => {
+          try {
+            if ('serviceWorker' in navigator) {
+              const regs = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(regs.map((r) => r.unregister()));
+            }
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((k) => caches.delete(k)));
+            }
+          } catch (_) {}
+          window.location.reload();
+        });
+      }
     }
   }
 });

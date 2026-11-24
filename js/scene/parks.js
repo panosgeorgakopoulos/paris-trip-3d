@@ -382,5 +382,174 @@ export function buildParksAndTrees() {
   ctx.scene.add(trunkInst);
   ctx.scene.add(crownInst);
   ctx.scene.add(frostInst);
+
+  // ---------------------------------------------------------------------
+  // 8. AUTHENTIC DECEMBER PARIS CHRISTMAS DECOR (1–3 DÉCEMBRE 2026!)
+  //    • Illuminated Golden Fairy-Light Trees lining the Champs-Élysées
+  //    • Marché de Noël des Tuileries (La Magie de Noël): 14 Alpine Chalets,
+  //      Warm Overhead Garlands & Rotating Illuminated Grande Roue Ferris Wheel!
+  // ---------------------------------------------------------------------
+  const xmasLightMat = new THREE.MeshStandardMaterial({
+    color: 0xffe4a0,
+    emissive: 0xffb83c,
+    emissiveIntensity: 1.05,
+    roughness: 0.25,
+  });
+  ctx.xmasLightMat = xmasLightMat;
+
+  // A. Champs-Élysées Glowing Golden Fairy-Light Christmas Trees (Concorde -> Arc de Triomphe)
+  const ceStart = geoToXZ(48.8660, 2.3190); // Place de la Concorde west entrance
+  const ceEnd = geoToXZ(48.8732, 2.2974);   // Arc de Triomphe approach
+  const ceDx = ceEnd[0] - ceStart[0];
+  const ceDz = ceEnd[1] - ceStart[1];
+  const ceLen = Math.hypot(ceDx, ceDz) || 1;
+  const ceNormX = -ceDz / ceLen;
+  const ceNormZ = ceDx / ceLen;
+
+  const cePairs = 26;
+  const ceTreeCount = cePairs * 2;
+  const ceTrunkInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.05, 0.075, 0.45, 5), trunkMat, ceTreeCount);
+  const ceGlowCrownInst = new THREE.InstancedMesh(new THREE.SphereGeometry(0.32, 8, 7), xmasLightMat, ceTreeCount);
+  const ceSparkRingInst = new THREE.InstancedMesh(
+    new THREE.TorusGeometry(0.28, 0.025, 5, 10),
+    new THREE.MeshBasicMaterial({ color: 0xfff5d6 }),
+    ceTreeCount
+  );
+  let ceIdx = 0;
+  for (let i = 0; i < cePairs; i++) {
+    const t = (i + 0.5) / cePairs;
+    const bx = ceStart[0] + ceDx * t;
+    const bz = ceStart[1] + ceDz * t;
+    [-1.08, 1.08].forEach((side) => {
+      const tx = bx + ceNormX * side;
+      const tz = bz + ceNormZ * side;
+      const ty = getTerrainY(tx, tz);
+      dummy.position.set(tx, ty + 0.22, tz);
+      dummy.scale.set(1, 1, 1);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      ceTrunkInst.setMatrixAt(ceIdx, dummy.matrix);
+
+      dummy.position.set(tx, ty + 0.62, tz);
+      dummy.scale.set(0.95, 1.12, 0.95);
+      dummy.updateMatrix();
+      ceGlowCrownInst.setMatrixAt(ceIdx, dummy.matrix);
+
+      dummy.position.set(tx, ty + 0.64, tz);
+      dummy.rotation.set(Math.PI / 2, 0, i * 0.4);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      ceSparkRingInst.setMatrixAt(ceIdx, dummy.matrix);
+      ceIdx++;
+    });
+  }
+  ctx.scene.add(ceTrunkInst);
+  ctx.scene.add(ceGlowCrownInst);
+  ctx.scene.add(ceSparkRingInst);
+
+  // B. Marché de Noël des Tuileries ("La Magie de Noël") along the North Tuileries Terrace!
+  const xmasMarketG = new THREE.Group();
+  const chaletWoodMat = new THREE.MeshStandardMaterial({ color: 0x6b4226, roughness: 0.85 });
+  const chaletRoofMat = new THREE.MeshStandardMaterial({ color: 0xf0f4fa, roughness: 0.72 });
+  const chaletWindowMat = new THREE.MeshStandardMaterial({
+    color: 0xffe49e,
+    emissive: 0xffa732,
+    emissiveIntensity: 1.15,
+    roughness: 0.2,
+  });
+  const festRedMat = new THREE.MeshStandardMaterial({ color: 0xc92a42, emissive: 0x7a1222, emissiveIntensity: 0.45, roughness: 0.4 });
+  const festGreenMat = new THREE.MeshStandardMaterial({ color: 0x1e6b43, emissive: 0x0f3d26, emissiveIntensity: 0.35, roughness: 0.6 });
+
+  const chaletBodyGeo = new THREE.BoxGeometry(0.62, 0.38, 0.44);
+  const chaletWinGeo = new THREE.BoxGeometry(0.46, 0.16, 0.46);
+  const chaletRoofGeo = new THREE.ConeGeometry(0.46, 0.24, 4);
+
+  // 14 cozy glowing Alpine wooden chalets lining the northern terrace promenade
+  for (let i = 0; i < 14; i++) {
+    const cx = -4.6 + i * 0.72;
+    const cz = (i % 2 === 0) ? -1.96 : -1.42;
+    const chalet = new THREE.Group();
+    const body = new THREE.Mesh(chaletBodyGeo, chaletWoodMat);
+    body.position.y = 0.24;
+    chalet.add(body);
+    const win = new THREE.Mesh(chaletWinGeo, chaletWindowMat);
+    win.position.y = 0.27;
+    chalet.add(win);
+    const roof = new THREE.Mesh(chaletRoofGeo, chaletRoofMat);
+    roof.rotation.y = Math.PI / 4;
+    roof.scale.set(1.15, 1, 0.88);
+    roof.position.y = 0.54;
+    chalet.add(roof);
+    chalet.position.set(cx, 0.08, cz);
+    xmasMarketG.add(chalet);
+  }
+
+  // Glowing Overhead Holiday String Garlands across the Market Walk
+  for (let g = 0; g < 6; g++) {
+    const gx = -4.2 + g * 1.65;
+    const garland = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.02, 5, 10, Math.PI), xmasLightMat);
+    garland.position.set(gx, 0.68, -1.69);
+    garland.rotation.y = Math.PI / 2;
+    xmasMarketG.add(garland);
+  }
+
+  // Festive Tuileries Christmas Tree centerpiece
+  const marketTree = new THREE.Group();
+  [[0.42, 0.48, 0.36], [0.32, 0.42, 0.68], [0.2, 0.36, 0.96]].forEach(([r, h, y]) => {
+    const tier = new THREE.Mesh(new THREE.ConeGeometry(r, h, 8), festGreenMat);
+    tier.position.y = y;
+    marketTree.add(tier);
+  });
+  const mTreeStar = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), xmasLightMat);
+  mTreeStar.position.y = 1.22;
+  marketTree.add(mTreeStar);
+  marketTree.position.set(0.3, 0.1, -1.68);
+  xmasMarketG.add(marketTree);
+
+  // Iconic Illuminated Grande Roue (Tuileries Christmas Ferris Wheel near Concorde!)
+  const wheelGroup = new THREE.Group();
+  const legGeo = new THREE.CylinderGeometry(0.04, 0.055, 2.2, 6);
+  const legMat = new THREE.MeshStandardMaterial({ color: 0xe6e9f2, metalness: 0.45, roughness: 0.35 });
+  [[-0.38, -0.25, 0.18], [0.38, -0.25, -0.18], [-0.38, 0.25, 0.18], [0.38, 0.25, -0.18]].forEach(([lx, lz, rz]) => {
+    const leg = new THREE.Mesh(legGeo, legMat);
+    leg.position.set(lx, 1.05, lz);
+    leg.rotation.z = rz;
+    wheelGroup.add(leg);
+  });
+
+  const wheelRotor = new THREE.Group();
+  wheelRotor.position.y = 2.02;
+  const outerRim = new THREE.Mesh(new THREE.TorusGeometry(1.52, 0.055, 8, 28), xmasLightMat);
+  wheelRotor.add(outerRim);
+  const innerRim = new THREE.Mesh(new THREE.TorusGeometry(1.02, 0.032, 6, 22), legMat);
+  wheelRotor.add(innerRim);
+  const spokeGeo = new THREE.CylinderGeometry(0.018, 0.018, 3.0, 5);
+  const gondolaGeo = new THREE.BoxGeometry(0.18, 0.2, 0.2);
+  for (let s = 0; s < 12; s++) {
+    const ang = (s / 12) * Math.PI * 2;
+    if (s < 6) {
+      const spoke = new THREE.Mesh(spokeGeo, legMat);
+      spoke.rotation.z = ang;
+      wheelRotor.add(spoke);
+    }
+    const gond = new THREE.Mesh(gondolaGeo, s % 2 === 0 ? festRedMat : chaletWindowMat);
+    gond.position.set(Math.cos(ang) * 1.52, Math.sin(ang) * 1.52, 0);
+    wheelRotor.add(gond);
+  }
+  const wheelHub = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), xmasLightMat);
+  wheelRotor.add(wheelHub);
+  wheelGroup.add(wheelRotor);
+  ctx.tuileriesWheel = wheelRotor;
+
+  const marketGlow = new THREE.PointLight(0xffbd59, 1.35, 11);
+  marketGlow.position.set(-2.2, 2.2, -1.68);
+  xmasMarketG.add(marketGlow);
+
+  wheelGroup.position.set(-5.8, 0.1, -1.68);
+  xmasMarketG.add(wheelGroup);
+
+  xmasMarketG.position.set(tuilC[0], 0, tuilC[1] - 0.65);
+  xmasMarketG.rotation.y = tRot;
+  ctx.scene.add(xmasMarketG);
 }
 

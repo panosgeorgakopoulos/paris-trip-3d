@@ -1,11 +1,12 @@
 // Offline-First Service Worker for Paris 3D Trip Guide (works underground in Paris Métro!)
-const CACHE_NAME = 'paris-3d-v5';
+const CACHE_NAME = 'paris-3d-v6';
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './assets/icon.svg',
   './assets/apple-touch-icon.png',
+  './vendor/three.min.js',
   './css/tailwind.min.css',
   './css/styles.css',
   './data/paris-buildings.zbin',
@@ -61,7 +62,7 @@ self.addEventListener('fetch', (event) => {
       const networkFetch = fetch(req).then((res) => {
         if (res && (res.status === 200 || res.type === 'opaque')) {
           const copy = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(req, copy)).catch(() => {});
+          caches.open(CACHE_NAME).then((c) => c.put(req, copy)).catch(() => { });
         }
         return res;
       }).catch(() => cached);

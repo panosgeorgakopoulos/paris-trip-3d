@@ -662,40 +662,59 @@ export function buildParisLandmarks() {
   const glRoof = new THREE.Mesh(new THREE.BoxGeometry(2.75, 0.24, 2.1), darkSlate);
   glRoof.position.y = 1.66;
   glGroup.add(glRoof);
-  // Glowing 10-Ribbed Art Nouveau Neo-Byzantine Stained-Glass Cupola
+  // Glowing 10-Ribbed Art Nouveau Neo-Byzantine Stained-Glass Cupola (crystal-clear so the giant tree shines inside!)
   const glDome = new THREE.Mesh(
-    new THREE.SphereGeometry(0.95, 20, 14, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.SphereGeometry(1.06, 22, 16, 0, Math.PI * 2, 0, Math.PI / 2),
     new THREE.MeshStandardMaterial({
       color: 0xffe49e,
       emissive: 0xffb340,
-      emissiveIntensity: 0.95,
+      emissiveIntensity: 0.72,
       transparent: true,
-      opacity: 0.82,
-      roughness: 0.18,
+      opacity: 0.44,
+      roughness: 0.15,
+      depthWrite: false,
     })
   );
   glDome.position.y = 1.72;
   glGroup.add(glDome);
   for (let r = 0; r < 10; r++) {
-    const rib = new THREE.Mesh(new THREE.TorusGeometry(0.96, 0.024, 5, 12, Math.PI / 2), goldLeaf);
+    const rib = new THREE.Mesh(new THREE.TorusGeometry(1.07, 0.028, 5, 14, Math.PI / 2), goldLeaf);
     rib.position.y = 1.72;
     rib.rotation.y = (r / 10) * Math.PI * 2;
     glGroup.add(rib);
   }
-  // Multi-Tiered Giant Christmas Tree glowing in the December holiday display!
-  const xmasMat = new THREE.MeshStandardMaterial({ color: 0x1a6944, emissive: 0x268a58, emissiveIntensity: 0.45 });
+  // Ornate Multi-Tiered Giant Galeries Lafayette Christmas Tree glowing right under the Art Nouveau dome!
+  const xmasMat = new THREE.MeshStandardMaterial({ color: 0x165f3c, emissive: 0x1f7a4c, emissiveIntensity: 0.45, roughness: 0.6 });
+  const ornRed = new THREE.MeshStandardMaterial({ color: 0xe63950, emissive: 0xc92a42, emissiveIntensity: 0.85, roughness: 0.25 });
+  const ornBlue = new THREE.MeshStandardMaterial({ color: 0x5cc2ff, emissive: 0x3b9eff, emissiveIntensity: 0.85, roughness: 0.25 });
+  const ornGeo = new THREE.SphereGeometry(0.06, 7, 6);
   [
-    [0.44, 0.46, 2.02],
-    [0.34, 0.42, 2.34],
-    [0.22, 0.38, 2.64],
-  ].forEach(([r, h, y]) => {
-    const tier = new THREE.Mesh(new THREE.ConeGeometry(r, h, 8), xmasMat);
+    [0.54, 0.50, 1.88],
+    [0.44, 0.45, 2.18],
+    [0.32, 0.40, 2.46],
+    [0.19, 0.34, 2.71],
+  ].forEach(([r, h, y], tIdx) => {
+    const tier = new THREE.Mesh(new THREE.ConeGeometry(r, h, 10), xmasMat);
     tier.position.y = y;
     glGroup.add(tier);
+    const garland = new THREE.Mesh(new THREE.TorusGeometry(r * 0.82, 0.022, 5, 14), goldLeaf);
+    garland.rotation.x = Math.PI / 2;
+    garland.position.y = y - h * 0.25;
+    glGroup.add(garland);
+    for (let o = 0; o < 5; o++) {
+      const ang = (o / 5) * Math.PI * 2 + tIdx * 0.7;
+      const orn = new THREE.Mesh(ornGeo, (o + tIdx) % 3 === 0 ? goldLeaf : ((o + tIdx) % 3 === 1 ? ornRed : ornBlue));
+      orn.position.set(Math.cos(ang) * r * 0.84, y - h * 0.14, Math.sin(ang) * r * 0.84);
+      glGroup.add(orn);
+    }
   });
-  const xmasStar = new THREE.Mesh(new THREE.OctahedronGeometry(0.15, 0), goldLeaf);
-  xmasStar.position.set(0, 2.94, 0);
+  const xmasStar = new THREE.Mesh(new THREE.OctahedronGeometry(0.17, 0), goldLeaf);
+  xmasStar.position.set(0, 2.98, 0);
   glGroup.add(xmasStar);
+  ctx.lafayetteTreeStar = xmasStar;
+  const glLight = new THREE.PointLight(0xffcf6e, 1.25, 7.5);
+  glLight.position.set(0, 2.65, 0);
+  glGroup.add(glLight);
   glGroup.position.set(P.lafayette[0], 0, P.lafayette[1]);
   ctx.scene.add(glGroup);
 
