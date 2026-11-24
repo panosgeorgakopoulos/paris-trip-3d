@@ -8,8 +8,10 @@ import { buildClassicParisianHouses } from './scene/buildings.js';
 import { buildParisLandmarks } from './scene/landmarks.js';
 import { buildParisianPlaces } from './scene/places.js';
 import { buildDayRoutes, buildSquad4Guys, applySquadPosition, sampleDayPath, buildStopMarkers, buildAtmosphereEffects } from './scene/squad.js';
+import { buildTransitOverlay } from './scene/transit.js';
 import { clampMapTarget, setupInteractionListeners, onWindowResize } from './controls.js';
-import { updateProjectedLabels, bindUIEvents, renderItineraryList, renderBookings, renderPhotoSpots, applyDayVisibilityTo3D, setSidebarOpen, updateFollowButton, updatePlayButtonUI } from './ui.js';
+import { updateProjectedLabels, bindUIEvents, renderItineraryList, renderBookings, renderPhotoSpots, applyDayVisibilityTo3D, setSidebarOpen, updateFollowButton, updatePlayButtonUI, selectStop } from './ui.js';
+import { animateGpsBeacon, initParisWeather, updateCompassUI, updateLiveParisBanner, hydrateFromUrlHash, registerOfflinePWA } from './features.js';
 
 function init3D() {
   const container = document.getElementById('canvas-container');
@@ -64,6 +66,7 @@ function init3D() {
   buildParisLandmarks();
   buildParisianPlaces();
   buildDayRoutes();
+  buildTransitOverlay();
   buildSquad4Guys();
   buildStopMarkers();
   buildAtmosphereEffects();
@@ -288,6 +291,8 @@ function animate() {
     }
   }
 
+  animateGpsBeacon(elapsed);
+  updateCompassUI();
   updateProjectedLabels();
   ctx.renderer.render(ctx.scene, ctx.camera);
 }
@@ -299,6 +304,7 @@ window.addEventListener('load', () => {
     if (bar) bar.style.width = '70%';
 
     init3D();
+    hydrateFromUrlHash();
     bindUIEvents();
     renderItineraryList();
     renderBookings();
@@ -308,7 +314,11 @@ window.addEventListener('load', () => {
     updateFollowButton();
     updatePlayButtonUI();
     updateCountdown();
+    updateLiveParisBanner((id) => selectStop(id, true));
+    initParisWeather();
+    registerOfflinePWA();
     setInterval(updateCountdown, 30000);
+    setInterval(() => updateLiveParisBanner((id) => selectStop(id, true)), 60000);
 
     animate();
 

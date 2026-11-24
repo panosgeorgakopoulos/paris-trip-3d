@@ -427,6 +427,20 @@ button:focus-visible {
   animation: celebSpark 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Google Maps Floating Rotating North-Up Compass */
+.compass-btn {
+  opacity: 0;
+  transform: scale(0.75);
+  pointer-events: none !important;
+  transition: opacity 0.22s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.compass-btn.compass-visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto !important;
+}
+
 /* Custom Range Scrubber for 4-Guys Timeline */
 input[type="range"].squad-range {
   -webkit-appearance: none;

@@ -2,7 +2,9 @@
 import { P, DAY_META, ITINERARY_STOPS, BOOKINGS_DATA, PHOTO_SPOTS, mapsUrl } from './config.js';
 import { ctx, state, camCtrl, prefersReducedMotion, saveState, showToast, spawnCelebrationBurst, triggerSquash } from './state.js';
 import { sampleDayPath } from './scene/squad.js';
+import { setTransitOverlayVisible } from './scene/transit.js';
 import { flyCameraTo, focusHomeApartment, resetOverviewCamera } from './controls.js';
+import { toggleLiveGPS, snapNorthUp, buildDirectionsUrl, shareTripProgress, updateLiveParisBanner } from './features.js';
 
 const tempProj = new THREE.Vector3();
 export function updateProjectedLabels() {
@@ -72,6 +74,30 @@ export function updateProjectedLabels() {
     el.style.pointerEvents = (!entry.isFriend && alpha > 0.25) ? 'auto' : 'none';
     el.style.zIndex = entry.isFriend ? '29' : (entry.isSquad ? '28' : (isSelected ? '26' : (entry.isHome ? '24' : '15')));
   });
+
+  // Project 3D Paris Métro / RER / FLV Shuttle Station Badges when Transit Overlay is active!
+  if (state.metroOverlay && ctx.transitLabels && ctx.transitLabels.length) {
+    const topPad = isMobile ? 105 : 64;
+    const botPad = isMobile ? 102 : 95;
+    const maxDist = isMobile ? 96 : 138;
+    ctx.transitLabels.forEach((t) => {
+      const dist = ctx.camera.position.distanceTo(t.pos);
+      if (dist > maxDist) {
+        t.el.style.opacity = '0';
+        return;
+      }
+      tempProj.copy(t.pos).project(ctx.camera);
+      const sx = (tempProj.x * 0.5 + 0.5) * w;
+      const sy = (-tempProj.y * 0.5 + 0.5) * h;
+      if (tempProj.z > 1 || sx < -20 || sx > w + 20 || sy < topPad || sy > h - botPad) {
+        t.el.style.opacity = '0';
+        return;
+      }
+      t.el.style.transform = `translate3d(${sx}px, ${sy}px, 0) translate(-50%, -115%)`;
+      t.el.style.opacity = dist > maxDist * 0.78 ? '0.6' : '0.96';
+      t.el.style.zIndex = '18';
+    });
+  }
 }
 
 // =======================================================================
@@ -234,6 +260,7 @@ export function selectStop(stopId, shouldFly = true, originPt = null) {
 
   state.selectedStopId = stop.id;
   state.squadFollowCam = false;
+  state.camFollowMode = 'free';
   updateFollowButton();
 
   if (state.timeMode === 'auto') {
@@ -277,6 +304,8 @@ export function renderStopCard(stop, originPt = null) {
   document.getElementById('card-desc').textContent = stop.details;
   document.getElementById('card-tip').textContent = stop.tip;
   document.getElementById('btn-card-maps').href = mapsUrl(stop.mapsQuery || stop.title);
+  const dirBtn = document.getElementById('btn-card-directions');
+  if (dirBtn) dirBtn.href = buildDirectionsUrl(stop);
 
   // Follow-Through: inner card details settle a subtle beat after the card shell!
   const tipBox = document.getElementById('stop-card-body');
@@ -378,6 +407,7 @@ export function renderBookings() {
       state.bookings[item.id] = !state.bookings[item.id];
       saveState();
       renderBookings();
+      updateLiveParisBanner((id) => selectStop(id, true));
       showToast(state.bookings[item.id] ? `🎟️ Έτοιμο: ${item.title}` : `Εκκρεμεί: ${item.title}`);
     });
     list.appendChild(row);
@@ -429,13 +459,26 @@ export function updatePlayButtonUI() {
 
 export function updateFollowButton() {
   const btn = document.getElementById('btn-follow-squad');
+  const icon = document.getElementById('follow-cam-icon');
+  const label = document.getElementById('follow-cam-label');
   if (!btn) return;
-  if (state.squadFollowCam) {
+  btn.classList.remove(
+    'bg-champagne/20', 'border-champagne/50', 'text-champagne',
+    'bg-emeraldParis/20', 'border-emeraldParis/50', 'text-emeraldParis',
+    'bg-white/10', 'border-transparent', 'text-ivory/65'
+  );
+  if (state.squadFollowCam && state.camFollowMode === 'pov') {
+    btn.classList.add('bg-emeraldParis/20', 'border-emeraldParis/50', 'text-emeraldParis');
+    if (icon) icon.textContent = '🚶';
+    if (label) label.textContent = 'POV';
+  } else if (state.squadFollowCam) {
     btn.classList.add('bg-champagne/20', 'border-champagne/50', 'text-champagne');
-    btn.classList.remove('bg-white/10', 'border-transparent', 'text-ivory/65');
+    if (icon) icon.textContent = '🎥';
+    if (label) label.textContent = 'Follow';
   } else {
-    btn.classList.remove('bg-champagne/20', 'border-champagne/50', 'text-champagne');
     btn.classList.add('bg-white/10', 'border-transparent', 'text-ivory/65');
+    if (icon) icon.textContent = '🎥';
+    if (label) label.textContent = 'Free';
   }
 }
 
@@ -444,6 +487,7 @@ export function toggleSquadPlay() {
   if (state.squadPlaying) {
     if (state.activeDay !== 'all') state.squadDay = state.activeDay;
     state.squadFollowCam = true;
+    if (state.camFollowMode === 'free') state.camFollowMode = 'follow';
     updateFollowButton();
     hideStopCard();
     if (window.innerWidth < 768) setSidebarOpen(false);
@@ -460,6 +504,7 @@ export function startSquadForDay(dayNum) {
   state.squadProgress = 0;
   state.squadPlaying = true;
   state.squadFollowCam = true;
+  if (state.camFollowMode === 'free') state.camFollowMode = 'follow';
   updateFollowButton();
   updatePlayButtonUI();
   hideStopCard();
@@ -473,6 +518,7 @@ export function triggerEiffelSparkle(flyToTower = true) {
   }
   if (flyToTower) {
     state.squadFollowCam = false;
+    state.camFollowMode = 'free';
     updateFollowButton();
     flyCameraTo(new THREE.Vector3(P.eiffel[0], 6.8, P.eiffel[1]), new THREE.Vector3(-11, 9, 15));
   }
@@ -599,17 +645,55 @@ export function bindUIEvents() {
     showToast(`⚡ Ταχύτητα παρέας: ${state.squadSpeed}×`);
   });
 
-  document.getElementById('btn-follow-squad').addEventListener('click', () => {
-    state.squadFollowCam = !state.squadFollowCam;
+  document.getElementById('btn-follow-squad').addEventListener('click', (ev) => {
+    triggerSquash(ev.currentTarget);
+    const nextMode = !state.squadFollowCam ? 'follow' : (state.camFollowMode === 'follow' ? 'pov' : 'free');
+    state.camFollowMode = nextMode;
+    state.squadFollowCam = nextMode !== 'free';
     updateFollowButton();
-    if (state.squadFollowCam) {
-      const s = sampleDayPath(state.squadDay, state.squadProgress);
-      if (s) flyCameraTo(new THREE.Vector3(s.x, s.y + 1, s.z), new THREE.Vector3(-8, 10, 12));
+    const s = sampleDayPath(state.squadDay, state.squadProgress);
+    if (nextMode === 'pov' && s) {
+      camCtrl.autoOrbit = false;
+      camCtrl.arc = null;
+      camCtrl.desiredTarget.set(s.x, s.y + 1.05, s.z);
+      camCtrl.desiredRadius = window.innerWidth < 768 ? 8.4 : 7.4;
+      camCtrl.desiredPhi = 1.24;
+      const chaseTheta = s.heading + Math.PI;
+      let tDiff = chaseTheta - camCtrl.desiredTheta;
+      while (tDiff > Math.PI) tDiff -= Math.PI * 2;
+      while (tDiff < -Math.PI) tDiff += Math.PI * 2;
+      camCtrl.desiredTheta += tDiff;
+      showToast('🚶 Street POV κάμερα πίσω από την παρέα!');
+    } else if (nextMode === 'follow' && s) {
+      flyCameraTo(new THREE.Vector3(s.x, s.y + 1, s.z), new THREE.Vector3(-8, 10, 12));
       showToast('🎥 Follow Camera ενεργή στην παρέα');
     } else {
       showToast('🎥 Ελεύθερη κάμερα');
     }
   });
+
+  // Live GPS, 3D Paris Métro/RER Overlay, North-Up Compass & 4-Friend Share Sync
+  const gpsBtn = document.getElementById('btn-gps');
+  if (gpsBtn) gpsBtn.addEventListener('click', (ev) => toggleLiveGPS(ev.currentTarget));
+
+  const metroBtn = document.getElementById('btn-metro-overlay');
+  if (metroBtn) {
+    metroBtn.addEventListener('click', (ev) => {
+      const next = !state.metroOverlay;
+      setTransitOverlayVisible(next);
+      metroBtn.classList.toggle('bg-champagne/25', next);
+      metroBtn.classList.toggle('border-champagne/65', next);
+      metroBtn.classList.toggle('text-champagne', next);
+      triggerSquash(ev.currentTarget);
+      showToast(next ? '🚇 Γραμμές Μετρό 1, 2, 9, RER C & FLV Shuttle ενεργές!' : '🚇 Απόκρυψη γραμμών Μετρό');
+    });
+  }
+
+  const compassBtn = document.getElementById('btn-compass');
+  if (compassBtn) compassBtn.addEventListener('click', (ev) => snapNorthUp(ev.currentTarget));
+
+  const shareBtn = document.getElementById('btn-share-sync');
+  if (shareBtn) shareBtn.addEventListener('click', (ev) => shareTripProgress(ev.currentTarget));
 
   document.getElementById('squad-scrubber').addEventListener('input', (ev) => {
     state.squadProgress = Number(ev.target.value) / 1000;

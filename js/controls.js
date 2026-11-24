@@ -66,6 +66,7 @@ export function setupInteractionListeners(container) {
       camCtrl.dragMoved = true;
       if (state.squadPlaying && state.squadFollowCam) {
         state.squadFollowCam = false;
+        state.camFollowMode = 'free';
         updateFollowButton();
       }
     }
@@ -112,6 +113,7 @@ export function setupInteractionListeners(container) {
   function stopFollowOnGesture() {
     if (state.squadPlaying && state.squadFollowCam) {
       state.squadFollowCam = false;
+      state.camFollowMode = 'free';
       updateFollowButton();
     }
   }
@@ -310,6 +312,7 @@ export function flyCameraTo(targetVec, offsetVec) {
 
 export function focusHomeApartment() {
   state.squadFollowCam = false;
+  state.camFollowMode = 'free';
   updateFollowButton();
   flyCameraTo(new THREE.Vector3(P.home[0], 1.4, P.home[1]), new THREE.Vector3(-7, 9, 10));
   showToast('🏠 3 Rue Saint-Hyacinthe, 75001 — Το διαμέρισμά σας!');
@@ -317,6 +320,7 @@ export function focusHomeApartment() {
 
 export function resetOverviewCamera() {
   state.squadFollowCam = false;
+  state.camFollowMode = 'free';
   updateFollowButton();
   camCtrl.desiredTarget.set(-14, 1.5, 4);
   camCtrl.desiredRadius = window.innerWidth < 768 ? 138 : 112;

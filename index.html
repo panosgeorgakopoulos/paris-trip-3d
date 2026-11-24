@@ -9,6 +9,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Paris 3D" />
   <title>Παρίσι 3D • 1–3 Δεκ 2026 | Panos, Kostas, Iakovos &amp; Imbrixis</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
 
   <!-- Fonts with full Greek glyph support -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,34 +20,12 @@
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Three.js r147 (UMD build: fast, reliable on both http:// and file://) -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            midnight: '#0a0f1e',
-            champagne: '#ecc778',
-            ivory: '#f8f4ec',
-            roseParis: '#f282a8',
-            sapphire: '#5cc2ff',
-            emeraldParis: '#4ade9a',
-          },
-          fontFamily: {
-            serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-            sans: ['"Manrope"', 'system-ui', 'sans-serif'],
-          },
-        },
-      },
-    };
-  </script>
-
+  <!-- Pre-compiled Static Tailwind CSS (zero runtime CDN compiler overhead!) -->
+  <link rel="stylesheet" href="./css/tailwind.min.css" />
   <link rel="stylesheet" href="./css/styles.css" />
+
+  <!-- Three.js r147 (UMD build, cached offline by sw.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 </head>
 
 <body class="select-none overflow-hidden">
@@ -97,6 +78,11 @@
               <span class="font-serif text-lg sm:text-xl font-semibold italic leading-none text-ivory">Paris</span>
               <span
                 class="text-[9px] font-extrabold uppercase tracking-widest text-champagne bg-champagne/15 px-1.5 py-0.5 rounded-full border border-champagne/35">3D</span>
+              <span id="paris-weather-pill"
+                class="hidden items-center gap-1 text-[10px] font-semibold text-ivory/90 bg-white/10 px-1.5 py-0.5 rounded-full border border-white/15">
+                <span id="weather-icon" aria-hidden="true">☁️</span>
+                <span id="weather-temp">--°C</span>
+              </span>
             </div>
             <p class="text-[10px] text-ivory/65 leading-tight hidden sm:block truncate">3 Rue Saint-Hyacinthe • 1–3 Δεκ
             </p>
@@ -141,6 +127,20 @@
           <span id="time-cycle-icon" aria-hidden="true">🌇</span>
         </button>
 
+        <!-- Live GPS "You Are Here" Toggle -->
+        <button id="btn-gps" type="button" aria-label="Ζωντανή θέση GPS στο Παρίσι"
+          class="glass-pill rounded-2xl px-2.5 py-2 flex items-center justify-center text-xs font-semibold text-ivory/90 active:scale-95"
+          title="Η θέση μου (Live GPS)">
+          <span aria-hidden="true">📍</span>
+        </button>
+
+        <!-- 3D Paris Métro & RER Lines Toggle -->
+        <button id="btn-metro-overlay" type="button" aria-label="Εμφάνιση γραμμών Μετρό και RER"
+          class="glass-pill rounded-2xl px-2.5 py-2 flex items-center justify-center text-xs font-semibold text-ivory/90 active:scale-95"
+          title="Γραμμές Μετρό 1, 2, 9 &amp; RER C">
+          <span aria-hidden="true">🚇</span>
+        </button>
+
         <!-- Eiffel Sparkle -->
         <button id="btn-eiffel-sparkle" type="button" aria-label="Λάμψη Πύργου του Άιφελ"
           class="glass-pill rounded-2xl px-2.5 sm:px-3 py-2 flex items-center gap-1.5 text-xs font-semibold text-champagne active:scale-95">
@@ -173,6 +173,17 @@
         </button>
       </div>
     </div>
+
+    <!-- Google Maps Floating Rotating North-Up Compass (appears whenever map is twisted) -->
+    <button id="btn-compass" type="button" aria-label="Επαναφορά προσανατολισμού στον Βορρά"
+      class="compass-btn glass-pill fixed right-3 top-[calc(max(10px,env(safe-area-inset-top,0px))+104px)] md:top-[116px] z-30 w-10 h-10 rounded-full flex items-center justify-center shadow-lg pointer-events-auto"
+      title="Βορράς επάνω (North Up)">
+      <svg id="compass-needle" aria-hidden="true" class="w-5 h-5" viewBox="0 0 24 24">
+        <polygon points="12,2 15.5,12 12,10.2 8.5,12" fill="#f25f5c" />
+        <polygon points="12,22 15.5,12 12,13.8 8.5,12" fill="#e8e2d5" />
+        <circle cx="12" cy="12" r="1.4" fill="#0a0f1e" />
+      </svg>
+    </button>
 
     <!-- Mobile Day Filter Row (clean single strip, never overlaps) -->
     <nav aria-label="Επιλογή ημέρας κινητού"
@@ -267,16 +278,32 @@
       </div>
     </div>
 
-    <!-- Progress & Walking Stats Strip -->
-    <div id="progress-strip" class="px-4 py-2.5 bg-white/[0.03] border-b border-white/5 shrink-0">
-      <div class="flex items-center justify-between text-[11px] mb-1.5">
+    <!-- Progress, Live Paris Alert & 4-Friend Share Sync Strip -->
+    <div id="progress-strip" class="px-4 py-2.5 bg-white/[0.03] border-b border-white/5 shrink-0 space-y-2">
+      <div class="flex items-center justify-between gap-2 text-[11px]">
         <span class="text-ivory/70 font-medium">Πρόοδος Παρέας</span>
-        <span id="progress-text" class="text-champagne font-bold">0 / 22 στάσεις (0%)</span>
+        <div class="flex items-center gap-2">
+          <span id="progress-text" class="text-champagne font-bold">0 / 22 στάσεις (0%)</span>
+          <button id="btn-share-sync" type="button" aria-label="Κοινοποίηση και συγχρονισμός προόδου παρέας"
+            class="px-2 py-0.5 rounded-lg bg-white/10 hover:bg-champagne/20 text-[10px] font-semibold text-ivory/90 hover:text-champagne border border-white/10 transition-all active:scale-95"
+            title="Αντιγραφή link συγχρονισμού για Panos, Kostas, Iakovos &amp; Imbrixis">
+            🔗 Sync
+          </button>
+        </div>
       </div>
       <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
         <div id="progress-bar"
           class="h-full bg-gradient-to-r from-champagne via-sapphire to-roseParis rounded-full transition-all duration-500"
           style="width: 0%;"></div>
+      </div>
+      <!-- Live Europe/Paris Schedule Alert / Notre-Dame 30/11 Reminder -->
+      <div id="live-paris-banner"
+        class="hidden items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-400/35 text-[11px] text-amber-100">
+        <span id="live-banner-text" class="font-semibold leading-snug truncate"></span>
+        <button id="btn-live-jump" type="button"
+          class="hidden shrink-0 px-2 py-0.5 rounded-lg bg-champagne text-midnight text-[10px] font-bold active:scale-95">
+          Πήγαινε →
+        </button>
       </div>
     </div>
 
@@ -435,6 +462,12 @@
           <span aria-hidden="true">🗺️</span>
           <span>Maps</span>
         </a>
+        <a id="btn-card-directions" href="#" target="_blank" rel="noopener noreferrer"
+          class="px-2.5 py-1.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1 bg-emeraldParis/15 border border-emeraldParis/35 text-emeraldParis hover:bg-emeraldParis/25 transition-all"
+          title="Οδηγίες διαδρομής από την προηγούμενη στάση">
+          <span aria-hidden="true">🧭</span>
+          <span class="hidden sm:inline">Οδηγίες</span>
+        </a>
       </div>
 
       <div class="flex items-center gap-1.5">
@@ -485,11 +518,11 @@
             class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-[11px] font-mono font-bold text-ivory active:scale-95 transition-all">
             1×
           </button>
-          <button id="btn-follow-squad" type="button" aria-label="Αυτόματη παρακολούθηση κάμερας στην παρέα"
+          <button id="btn-follow-squad" type="button" aria-label="Αλλαγή κάμερας παρέας (Follow, Street POV, Ελεύθερη)"
             class="px-2.5 py-1.5 rounded-xl bg-champagne/20 border border-champagne/50 text-champagne text-[11px] font-bold active:scale-95 transition-all flex items-center gap-1"
-            title="Follow Camera">
-            <span aria-hidden="true">🎥</span>
-            <span class="hidden sm:inline">Follow</span>
+            title="Κάμερα Παρέας: Follow / 🚶 Street POV / Free">
+            <span id="follow-cam-icon" aria-hidden="true">🎥</span>
+            <span id="follow-cam-label" class="hidden sm:inline">Follow</span>
           </button>
         </div>
       </div>

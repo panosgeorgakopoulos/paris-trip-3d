@@ -38,6 +38,9 @@ export const state = {
   // 4-Guys Route Player State
   squadPlaying: false,
   squadFollowCam: true,
+  camFollowMode: 'follow', // 'free' | 'follow' | 'pov'
+  gpsActive: false,
+  metroOverlay: false,
   squadSpeed: 1, // 1 | 2 | 4
   squadDay: 1,
   squadProgress: 0, // 0..1 across active timeline
@@ -157,6 +160,9 @@ export const ctx = {
   squadVehicles: { metro: null, shuttle: null, taxi: null },
   squadAuraRing: null,
   squadLabelEntry: null,
+  transitGroup: null,
+  transitLabels: [],
+  gpsBeacon: null,
   raycaster: new THREE.Raycaster(),
   pointer: new THREE.Vector2(),
 };

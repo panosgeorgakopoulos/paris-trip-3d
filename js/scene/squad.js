@@ -402,12 +402,24 @@ export function applySquadPosition(dt, elapsed) {
     }
     if (state.squadFollowCam) {
       camCtrl.autoOrbit = false;
-      camCtrl.desiredTarget.set(sample.x, sample.y + 1.1, sample.z);
-      if (camCtrl.desiredRadius > 26) {
-        camCtrl.desiredRadius = window.innerWidth < 768 ? 22 : 20;
-      }
-      if (camCtrl.desiredPhi < 0.72 || camCtrl.desiredPhi > 1.15) {
-        camCtrl.desiredPhi = 0.92;
+      if (state.camFollowMode === 'pov') {
+        // Street-Level Over-the-Shoulder POV Chase Camera behind the 4 guys!
+        camCtrl.desiredTarget.set(sample.x, sample.y + 1.05, sample.z);
+        camCtrl.desiredRadius = window.innerWidth < 768 ? 8.4 : 7.4;
+        camCtrl.desiredPhi = 1.24;
+        const chaseTheta = sample.heading + Math.PI;
+        let tDiff = chaseTheta - camCtrl.desiredTheta;
+        while (tDiff > Math.PI) tDiff -= Math.PI * 2;
+        while (tDiff < -Math.PI) tDiff += Math.PI * 2;
+        camCtrl.desiredTheta += tDiff * Math.min(1, dt * 3.8);
+      } else {
+        camCtrl.desiredTarget.set(sample.x, sample.y + 1.1, sample.z);
+        if (camCtrl.desiredRadius > 26) {
+          camCtrl.desiredRadius = window.innerWidth < 768 ? 22 : 20;
+        }
+        if (camCtrl.desiredPhi < 0.72 || camCtrl.desiredPhi > 1.15) {
+          camCtrl.desiredPhi = 0.92;
+        }
       }
     }
   }
@@ -513,6 +525,7 @@ export function buildStopMarkers() {
         el.addEventListener('click', (ev) => {
           ev.stopPropagation();
           state.squadFollowCam = true;
+          state.camFollowMode = 'follow';
           updateFollowButton();
           const s = sampleDayPath(state.squadDay, state.squadProgress);
           if (s) flyCameraTo(new THREE.Vector3(s.x, s.y + 1, s.z), new THREE.Vector3(-7, 9, 11));
@@ -522,6 +535,7 @@ export function buildStopMarkers() {
         el.addEventListener('click', (ev) => {
           ev.stopPropagation();
           state.squadFollowCam = false;
+          state.camFollowMode = 'free';
           updateFollowButton();
           hideStopCard();
           flyCameraTo(
