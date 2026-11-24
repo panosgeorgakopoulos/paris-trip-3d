@@ -106,7 +106,7 @@ export function buildParisLandmarks() {
   // 1. YOUR APARTMENT: 3 RUE SAINT-HYACINTHE, 75001 PARIS
   // =====================================================================
   const homeGroup = new THREE.Group();
-  const homeBody = new THREE.Mesh(new THREE.BoxGeometry(1.55, 2.05, 1.35), haussmannMat);
+  const homeBody = new THREE.Mesh(new THREE.BoxGeometry(1.55, 2.05, 1.35), ctx.haussmannMat);
   homeBody.position.y = 1.025;
   homeBody.castShadow = true;
   homeGroup.add(homeBody);
@@ -655,7 +655,7 @@ export function buildParisLandmarks() {
   //    & PASSAGES COUVERTS (GALERIE VIVIENNE / PASSAGE DES PANORAMAS)
   // =====================================================================
   const glGroup = new THREE.Group();
-  const glBody = new THREE.Mesh(new THREE.BoxGeometry(2.85, 1.55, 2.2), haussmannMat);
+  const glBody = new THREE.Mesh(new THREE.BoxGeometry(2.85, 1.55, 2.2), ctx.haussmannMat);
   glBody.position.y = 0.78;
   glBody.castShadow = true;
   glGroup.add(glBody);

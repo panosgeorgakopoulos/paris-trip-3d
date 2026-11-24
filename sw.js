@@ -1,5 +1,5 @@
 // Offline-First Service Worker for Paris 3D Trip Guide (works underground in Paris Métro!)
-const CACHE_NAME = 'paris-3d-v4';
+const CACHE_NAME = 'paris-3d-v5';
 const CORE_ASSETS = [
   './',
   './index.html',
