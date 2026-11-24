@@ -48,10 +48,10 @@ li {
   text-wrap: pretty;
 }
 
-/* Accessible touch & pointer minimum sizing */
-:where(button, [role="button"]) {
-  min-block-size: var(--target-size);
-  min-inline-size: var(--target-size);
+/* Proportional, non-inflating touch targets for primary buttons (never bloats compact badges/pills!) */
+.top-icon-btn,
+.map-fab-btn {
+  flex-shrink: 0;
 }
 
 /* Fullscreen 3D Viewport */
@@ -109,11 +109,14 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-/* Standard Scrollbar Styling + WebKit Fallback */
+/* Standard Scrollbar Styling + Silky iOS Safari Momentum Touch Scroll */
 .custom-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 @supports not (scrollbar-color: auto) {
@@ -146,11 +149,39 @@ button:focus-visible {
   display: none;
 }
 
-/* Safe-area aware Header & Bottom Dock */
+/* Safe-area aware Header, Right Map Rail & Bottom Dock */
 #top-bar {
   top: max(10px, var(--safe-top));
   left: max(10px, var(--safe-left));
   right: max(10px, var(--safe-right));
+}
+
+#map-tools-rail {
+  top: calc(max(10px, var(--safe-top)) + 98px);
+  right: max(10px, var(--safe-right));
+}
+
+@media (min-width: 1024px) {
+  #map-tools-rail {
+    top: calc(max(10px, var(--safe-top)) + 54px);
+  }
+}
+
+.sidebar-backdrop {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.24s ease;
+}
+
+body.sidebar-is-open .sidebar-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (max-width: 767px) {
+  #sidebar {
+    padding-bottom: max(10px, var(--safe-bottom));
+  }
 }
 
 #canvas-container {
@@ -334,12 +365,10 @@ button:focus-visible {
 
   /* Fitts's Law: generous thumb-friendly targets for primary mobile actions */
   #btn-play-squad,
-  #btn-toggle-sidebar,
   #btn-next-stop,
-  #btn-prev-stop,
-  #btn-close-card {
-    min-height: 40px;
-    min-width: 40px;
+  #btn-prev-stop {
+    min-height: 38px;
+    min-width: 38px;
   }
 }
 
@@ -482,10 +511,10 @@ input[type="range"].squad-range::-moz-range-thumb {
   border: 2px solid #0a0f1e;
 }
 
-/* Toast Notification */
+/* Toast Notification (always below 2-row mobile header so it never covers day pills!) */
 #toast-container {
   position: fixed;
-  top: calc(max(10px, var(--safe-top)) + 64px);
+  top: calc(max(10px, var(--safe-top)) + 102px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 65;
@@ -495,6 +524,12 @@ input[type="range"].squad-range::-moz-range-thumb {
   align-items: center;
   gap: 6px;
   max-width: calc(100vw - 24px);
+}
+
+@media (min-width: 1024px) {
+  #toast-container {
+    top: calc(max(10px, var(--safe-top)) + 58px);
+  }
 }
 
 .toast-msg {

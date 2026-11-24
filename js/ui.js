@@ -12,7 +12,7 @@ export function updateProjectedLabels() {
   const h = window.innerHeight;
   const isMobile = w < 768;
   const activeDay = state.activeDay;
-  const topPad = isMobile ? 105 : 64;
+  const topPad = w < 1024 ? 104 : 64;
   const botPad = isMobile ? 102 : 95;
   const squadWalking = ctx.squadGuys.length > 0 && ctx.squadGuys[0].group.visible;
 
@@ -214,17 +214,17 @@ export function renderItineraryList(shouldStagger = false) {
     const section = document.createElement('div');
     section.className = 'space-y-2';
     section.innerHTML = `
-      <div class="sticky top-0 z-10 py-2 px-3 rounded-2xl bg-[#0e152b]/95 backdrop-blur-md border border-white/10">
+      <div class="sticky top-0 z-10 -mx-3 px-3.5 py-2.5 bg-[#0c1326] border-y border-white/10 shadow-md">
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-2 min-w-0">
             <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${meta.colorHex}"></span>
             <span class="text-xs font-bold uppercase tracking-wider text-ivory truncate">${meta.date}</span>
           </div>
-          <button type="button" data-play-day="${dayNum}" class="play-day-btn px-2 py-0.5 rounded-lg bg-champagne/15 border border-champagne/35 text-champagne text-[10px] font-bold hover:bg-champagne/25 transition-all shrink-0">
+          <button type="button" data-play-day="${dayNum}" class="play-day-btn px-2.5 py-1 rounded-lg bg-champagne/15 border border-champagne/35 text-champagne text-[10px] font-bold hover:bg-champagne/25 transition-all shrink-0">
             ▶ Παρέα
           </button>
         </div>
-        <p class="text-[11px] text-ivory/70 mt-0.5 leading-snug">${meta.title}</p>
+        <p class="text-[11px] text-ivory/75 mt-0.5 leading-snug">${meta.title}</p>
         <p class="text-[10px] text-champagne/80 font-mono mt-0.5">👟 ${meta.walkStats}</p>
       </div>
     `;
@@ -403,11 +403,11 @@ export function renderStopCard(stop, originPt = null) {
   const vIcon = document.getElementById('card-visited-icon');
   const vText = document.getElementById('card-visited-text');
   if (isDone) {
-    vBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 bg-emerald-400/20 border border-emerald-400/45 text-emerald-300';
+    vBtn.className = 'px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 bg-emerald-400/20 border border-emerald-400/45 text-emerald-300 shrink-0';
     vIcon.textContent = '✓';
-    vText.textContent = 'Ολοκληρώθηκε';
+    vText.textContent = 'Έγινε';
   } else {
-    vBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 bg-white/10 hover:bg-white/15 text-ivory border border-white/10';
+    vBtn.className = 'px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 bg-white/10 hover:bg-white/15 text-ivory border border-white/10 shrink-0';
     vIcon.textContent = '○';
     vText.textContent = 'Σήμανση ✓';
   }
@@ -668,6 +668,32 @@ export function setTimeMode(mode) {
 export function bindUIEvents() {
   document.getElementById('btn-toggle-sidebar').addEventListener('click', () => setSidebarOpen(!state.sidebarOpen));
   document.getElementById('btn-close-sidebar').addEventListener('click', () => setSidebarOpen(false));
+  const sbBackdrop = document.getElementById('sidebar-backdrop');
+  if (sbBackdrop) sbBackdrop.addEventListener('click', () => setSidebarOpen(false));
+
+  // Native Swipe-Down-to-Close on the Mobile Sidebar Handle!
+  const sbHandle = document.getElementById('sidebar-drag-handle');
+  const sbEl = document.getElementById('sidebar');
+  if (sbHandle && sbEl) {
+    let sbStartY = 0, sbDeltaY = 0;
+    sbHandle.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      sbStartY = e.touches[0].clientY;
+      sbDeltaY = 0;
+      sbEl.style.transition = 'none';
+    }, { passive: true });
+    sbHandle.addEventListener('touchmove', (e) => {
+      if (e.touches.length !== 1) return;
+      sbDeltaY = Math.max(0, e.touches[0].clientY - sbStartY);
+      sbEl.style.transform = `translateY(${sbDeltaY.toFixed(1)}px)`;
+    }, { passive: true });
+    sbHandle.addEventListener('touchend', () => {
+      sbEl.style.transition = '';
+      sbEl.style.transform = '';
+      if (sbDeltaY > 68) setSidebarOpen(false);
+    }, { passive: true });
+    sbHandle.addEventListener('click', () => setSidebarOpen(false));
+  }
 
   // Sidebar tabs
   document.querySelectorAll('.sidebar-tab').forEach((btn) => {

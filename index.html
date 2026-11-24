@@ -58,136 +58,102 @@
   <!-- ================= TOASTS ================= -->
   <div id="toast-container" aria-live="polite"></div>
 
-  <!-- ================= TOP NAVIGATION BAR (MOBILE-FIRST COMPACT) ================= -->
-  <header id="top-bar" class="fixed z-40 flex flex-col gap-2 pointer-events-none">
-    <div class="flex items-center justify-between gap-2">
-      <!-- Left: Menu Drawer Toggle + Compact Brand -->
-      <div class="flex items-center gap-1.5 pointer-events-auto min-w-0">
+  <!-- ================= TOP NAVIGATION BAR (ZERO-OVERLAP RESPONSIVE LAYOUT) ================= -->
+  <header id="top-bar" class="fixed z-40 flex flex-col gap-1.5 pointer-events-none">
+    <div class="flex items-center justify-between gap-1.5">
+      <!-- Left: Menu Drawer Toggle + Compact Brand & Live Weather -->
+      <div class="flex items-center gap-1.5 pointer-events-auto min-w-0 flex-1 lg:flex-initial">
         <button id="btn-toggle-sidebar" type="button" aria-label="Άνοιγμα ή κλείσιμο προγράμματος"
-          class="glass-pill rounded-2xl px-3 py-2 flex items-center gap-2 text-ivory hover:text-champagne active:scale-95 shrink-0">
-          <svg aria-hidden="true" class="w-4 h-4 text-champagne" fill="none" stroke="currentColor" stroke-width="2.2"
+          class="glass-pill top-icon-btn rounded-2xl px-2.5 sm:px-3 h-9 sm:h-10 flex items-center justify-center gap-2 text-ivory hover:text-champagne active:scale-95 shrink-0">
+          <svg aria-hidden="true" class="w-4 h-4 text-champagne shrink-0" fill="none" stroke="currentColor" stroke-width="2.2"
             viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h12M4 18h16" />
           </svg>
           <span class="text-xs font-bold hidden sm:inline">Πρόγραμμα</span>
         </button>
 
-        <div class="glass-panel rounded-2xl px-3 py-1.5 flex items-center gap-2.5 min-w-0">
+        <div class="glass-panel rounded-2xl px-2.5 sm:px-3 h-9 sm:h-10 flex items-center gap-2 min-w-0 max-w-full">
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
-              <span class="font-serif text-lg sm:text-xl font-semibold italic leading-none text-ivory">Paris</span>
+              <span class="font-serif text-base sm:text-lg font-semibold italic leading-none text-ivory">Paris</span>
               <span
-                class="text-[9px] font-extrabold uppercase tracking-widest text-champagne bg-champagne/15 px-1.5 py-0.5 rounded-full border border-champagne/35">3D</span>
+                class="text-[9px] font-extrabold uppercase tracking-wider text-champagne bg-champagne/15 px-1.5 py-0.5 rounded-full border border-champagne/35 shrink-0">3D</span>
               <span id="paris-weather-pill"
-                class="hidden items-center gap-1 text-[10px] font-semibold text-ivory/90 bg-white/10 px-1.5 py-0.5 rounded-full border border-white/15">
+                class="hidden items-center gap-0.5 text-[10px] font-semibold text-ivory/90 bg-white/10 px-1.5 py-0.5 rounded-full border border-white/15 shrink-0">
                 <span id="weather-icon" aria-hidden="true">☁️</span>
                 <span id="weather-temp">--°C</span>
               </span>
             </div>
-            <p class="text-[10px] text-ivory/65 leading-tight hidden sm:block truncate">3 Rue Saint-Hyacinthe • 1–3 Δεκ
-            </p>
+            <p class="text-[10px] text-ivory/65 leading-none mt-0.5 hidden xl:block truncate">3 Rue Saint-Hyacinthe • 1–3 Δεκ</p>
           </div>
-          <div class="h-6 w-px bg-champagne/25 hidden lg:block"></div>
-          <div id="countdown-box" class="hidden lg:flex items-center gap-1.5 text-xs">
+          <div class="h-5 w-px bg-champagne/25 hidden xl:block shrink-0"></div>
+          <div id="countdown-box" class="hidden xl:flex items-center gap-1.5 text-xs shrink-0">
             <span class="text-champagne/80 text-[10px] uppercase tracking-wider font-semibold">Αναχώρηση:</span>
             <span id="countdown-text" class="font-mono text-ivory font-semibold">--μ --ω --λ</span>
           </div>
         </div>
       </div>
 
-      <!-- Center (Desktop): Day Filter Pills -->
+      <!-- Center (Large Desktop >= 1024px): Day Filter Pills -->
       <nav aria-label="Επιλογή ημέρας"
-        class="hidden md:flex glass-panel rounded-2xl p-1 items-center gap-1 pointer-events-auto">
+        class="hidden lg:flex glass-panel rounded-2xl p-1 items-center gap-1 pointer-events-auto shrink-0">
         <button type="button" data-day="all"
-          class="day-pill active px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-midnight bg-champagne shadow-sm">
+          class="day-pill active px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all text-midnight bg-champagne shadow-sm">
           Όλες (3)
         </button>
         <button type="button" data-day="1"
-          class="day-pill px-3 py-1.5 rounded-xl text-xs font-semibold transition-all text-ivory/80 hover:text-ivory hover:bg-white/10 flex items-center gap-1.5">
+          class="day-pill px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all text-ivory/80 hover:text-ivory hover:bg-white/10 flex items-center gap-1.5">
           <span aria-hidden="true" class="w-2 h-2 rounded-full bg-[#f4c668]"></span>
           <span>Τρί 1 Δεκ</span>
         </button>
         <button type="button" data-day="2"
-          class="day-pill px-3 py-1.5 rounded-xl text-xs font-semibold transition-all text-ivory/80 hover:text-ivory hover:bg-white/10 flex items-center gap-1.5">
+          class="day-pill px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all text-ivory/80 hover:text-ivory hover:bg-white/10 flex items-center gap-1.5">
           <span aria-hidden="true" class="w-2 h-2 rounded-full bg-[#5cc2ff]"></span>
           <span>Τετ 2 Δεκ</span>
         </button>
         <button type="button" data-day="3"
-          class="day-pill px-3 py-1.5 rounded-xl text-xs font-semibold transition-all text-ivory/80 hover:text-ivory hover:bg-white/10 flex items-center gap-1.5">
+          class="day-pill px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all text-ivory/80 hover:text-ivory hover:bg-white/10 flex items-center gap-1.5">
           <span aria-hidden="true" class="w-2 h-2 rounded-full bg-[#f282a8]"></span>
           <span>Πέμ 3 Δεκ</span>
         </button>
       </nav>
 
-      <!-- Right: Quick Atmosphere & View Controls -->
-      <div class="flex items-center gap-1.5 pointer-events-auto shrink-0">
-        <!-- Time of day quick cycle on mobile, full selector on desktop -->
-        <button id="btn-time-cycle" type="button" aria-label="Αλλαγή ώρας και φωτισμού"
-          class="md:hidden glass-pill rounded-2xl px-2.5 py-2 flex items-center justify-center text-xs font-semibold text-ivory active:scale-95">
-          <span id="time-cycle-icon" aria-hidden="true">🌇</span>
-        </button>
-
+      <!-- Right: Primary Quick Actions (4 compact buttons — fits cleanly even on 320px iPhone!) -->
+      <div class="flex items-center gap-1 sm:gap-1.5 pointer-events-auto shrink-0">
         <!-- Live GPS "You Are Here" Toggle -->
         <button id="btn-gps" type="button" aria-label="Ζωντανή θέση GPS στο Παρίσι"
-          class="glass-pill rounded-2xl px-2.5 py-2 flex items-center justify-center text-xs font-semibold text-ivory/90 active:scale-95"
-          title="Η θέση μου (Live GPS)">
+          class="glass-pill top-icon-btn rounded-2xl w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-sm text-ivory/90 active:scale-95"
+          title="Η θέση μου (Live GPS + Πυξίδα)">
           <span aria-hidden="true">📍</span>
         </button>
 
         <!-- 3D Paris Métro & RER Lines Toggle -->
         <button id="btn-metro-overlay" type="button" aria-label="Εμφάνιση γραμμών Μετρό και RER"
-          class="glass-pill rounded-2xl px-2.5 py-2 flex items-center justify-center text-xs font-semibold text-ivory/90 active:scale-95"
+          class="glass-pill top-icon-btn rounded-2xl w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-sm text-ivory/90 active:scale-95"
           title="Γραμμές Μετρό 1, 2, 9 &amp; RER C">
           <span aria-hidden="true">🚇</span>
         </button>
 
         <!-- Eiffel Sparkle -->
         <button id="btn-eiffel-sparkle" type="button" aria-label="Λάμψη Πύργου του Άιφελ"
-          class="glass-pill rounded-2xl px-2.5 sm:px-3 py-2 flex items-center gap-1.5 text-xs font-semibold text-champagne active:scale-95">
+          class="glass-pill top-icon-btn rounded-2xl w-9 h-9 sm:w-auto sm:h-10 sm:px-3 flex items-center justify-center gap-1.5 text-sm sm:text-xs font-semibold text-champagne active:scale-95"
+          title="Λάμψη Πύργου του Άιφελ">
           <span aria-hidden="true">✨</span>
-          <span class="hidden sm:inline">Λάμψη Άιφελ</span>
-        </button>
-
-        <!-- Snow Toggle -->
-        <button id="btn-snow" type="button" aria-label="Ενεργοποίηση ή απενεργοποίηση χιονιού"
-          class="glass-pill rounded-2xl px-2.5 py-2 flex items-center justify-center text-xs font-semibold text-sapphire border-sapphire/40 bg-sapphire/15 active:scale-95">
-          <span aria-hidden="true">❄️</span>
+          <span class="hidden lg:inline">Λάμψη Άιφελ</span>
         </button>
 
         <!-- Home Apartment Quick Focus -->
         <button id="btn-go-home" type="button" aria-label="Εστίαση στο διαμέρισμα Rue Saint-Hyacinthe 3"
-          class="glass-pill rounded-2xl px-2.5 py-2 flex items-center justify-center text-xs font-semibold text-champagne active:scale-95"
+          class="glass-pill top-icon-btn rounded-2xl w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-sm text-champagne active:scale-95"
           title="Διαμέρισμα • Rue Saint-Hyacinthe 3">
           <span aria-hidden="true">🏠</span>
-        </button>
-
-        <!-- Overview Camera Reset -->
-        <button id="btn-reset-view" type="button" aria-label="Πανοραμική θέα Παρισιού"
-          class="glass-pill rounded-2xl px-2.5 py-2 flex items-center justify-center text-ivory/85 hover:text-champagne active:scale-95"
-          title="Πανοραμική Θέα">
-          <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-            viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
         </button>
       </div>
     </div>
 
-    <!-- Google Maps Floating Rotating North-Up Compass (appears whenever map is twisted) -->
-    <button id="btn-compass" type="button" aria-label="Επαναφορά προσανατολισμού στον Βορρά"
-      class="compass-btn glass-pill fixed right-3 top-[calc(max(10px,env(safe-area-inset-top,0px))+104px)] md:top-[116px] z-30 w-10 h-10 rounded-full flex items-center justify-center shadow-lg pointer-events-auto"
-      title="Βορράς επάνω (North Up)">
-      <svg id="compass-needle" aria-hidden="true" class="w-5 h-5" viewBox="0 0 24 24">
-        <polygon points="12,2 15.5,12 12,10.2 8.5,12" fill="#f25f5c" />
-        <polygon points="12,22 15.5,12 12,13.8 8.5,12" fill="#e8e2d5" />
-        <circle cx="12" cy="12" r="1.4" fill="#0a0f1e" />
-      </svg>
-    </button>
-
-    <!-- Mobile Day Filter Row (clean single strip, never overlaps) -->
+    <!-- Mobile & Tablet Day Filter Row (< 1024px: full-width clean strip, never collides!) -->
     <nav aria-label="Επιλογή ημέρας κινητού"
-      class="flex md:hidden glass-panel rounded-2xl p-1 items-center gap-1 pointer-events-auto">
+      class="flex lg:hidden glass-panel rounded-2xl p-1 items-center gap-1 pointer-events-auto">
       <button type="button" data-day="all"
         class="day-pill active flex-1 py-1.5 rounded-xl text-[11px] font-bold transition-all text-midnight bg-champagne shadow-sm">
         Όλες
@@ -210,41 +176,79 @@
     </nav>
   </header>
 
-  <!-- ================= DESKTOP TIME-OF-DAY FLOATING PILL ================= -->
-  <div
-    class="hidden md:flex fixed top-[66px] right-3 z-30 items-center gap-1 glass-panel rounded-2xl p-1 pointer-events-auto">
-    <button type="button" data-time="auto"
-      class="time-pill active px-2.5 py-1 rounded-xl text-[11px] font-bold bg-champagne/25 text-champagne border border-champagne/40 transition-all">Auto</button>
-    <button type="button" data-time="morning"
-      class="time-pill px-2.5 py-1 rounded-xl text-[11px] font-medium text-ivory/75 hover:text-ivory transition-all">🌅
-      Πρωί</button>
-    <button type="button" data-time="dusk"
-      class="time-pill px-2.5 py-1 rounded-xl text-[11px] font-medium text-ivory/75 hover:text-ivory transition-all">🌇
-      Δύση</button>
-    <button type="button" data-time="night"
-      class="time-pill px-2.5 py-1 rounded-xl text-[11px] font-medium text-ivory/75 hover:text-ivory transition-all">🌙
-      Νύχτα</button>
+  <!-- ================= RIGHT-EDGE FLOATING MAP TOOLS RAIL (GOOGLE MAPS STYLE, ZERO OVERLAP!) ================= -->
+  <div id="map-tools-rail" class="fixed z-30 flex flex-col items-end gap-1.5 pointer-events-none">
+    <!-- Desktop Time-of-Day Selector -->
+    <div class="hidden md:flex glass-panel rounded-2xl p-1 items-center gap-1 pointer-events-auto">
+      <button type="button" data-time="auto"
+        class="time-pill active px-2.5 py-1 rounded-xl text-[11px] font-bold bg-champagne/25 text-champagne border border-champagne/40 transition-all">Auto</button>
+      <button type="button" data-time="morning"
+        class="time-pill px-2.5 py-1 rounded-xl text-[11px] font-medium text-ivory/75 hover:text-ivory transition-all">🌅 Πρωί</button>
+      <button type="button" data-time="dusk"
+        class="time-pill px-2.5 py-1 rounded-xl text-[11px] font-medium text-ivory/75 hover:text-ivory transition-all">🌇 Δύση</button>
+      <button type="button" data-time="night"
+        class="time-pill px-2.5 py-1 rounded-xl text-[11px] font-medium text-ivory/75 hover:text-ivory transition-all">🌙 Νύχτα</button>
+    </div>
+
+    <!-- Vertical Compact Map Controls (Time Cycle on mobile + Snow + Overview Reset + Rotating North-Up Compass) -->
+    <div class="flex flex-col items-center gap-1.5 pointer-events-auto">
+      <button id="btn-time-cycle" type="button" aria-label="Αλλαγή ώρας και φωτισμού"
+        class="md:hidden glass-pill map-fab-btn w-9 h-9 rounded-full flex items-center justify-center text-sm text-ivory active:scale-95"
+        title="Αλλαγή ώρας / φωτισμού">
+        <span id="time-cycle-icon" aria-hidden="true">🌇</span>
+      </button>
+
+      <button id="btn-snow" type="button" aria-label="Ενεργοποίηση ή απενεργοποίηση χιονιού"
+        class="glass-pill map-fab-btn w-9 h-9 rounded-full flex items-center justify-center text-sm text-sapphire border-sapphire/40 bg-sapphire/15 active:scale-95"
+        title="Χιονόπτωση">
+        <span aria-hidden="true">❄️</span>
+      </button>
+
+      <button id="btn-reset-view" type="button" aria-label="Πανοραμική θέα Παρισιού"
+        class="glass-pill map-fab-btn w-9 h-9 rounded-full flex items-center justify-center text-ivory/85 hover:text-champagne active:scale-95"
+        title="Πανοραμική Θέα">
+        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
+          viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+
+      <!-- Google Maps Rotating North-Up Compass (appears automatically whenever map is rotated!) -->
+      <button id="btn-compass" type="button" aria-label="Επαναφορά προσανατολισμού στον Βορρά"
+        class="compass-btn glass-pill map-fab-btn w-9 h-9 rounded-full flex items-center justify-center shadow-lg"
+        title="Βορράς επάνω (North Up)">
+        <svg id="compass-needle" aria-hidden="true" class="w-5 h-5" viewBox="0 0 24 24">
+          <polygon points="12,2 15.5,12 12,10.2 8.5,12" fill="#f25f5c" />
+          <polygon points="12,22 15.5,12 12,13.8 8.5,12" fill="#e8e2d5" />
+          <circle cx="12" cy="12" r="1.4" fill="#0a0f1e" />
+        </svg>
+      </button>
+    </div>
   </div>
 
-  <!-- ================= LEFT SIDEBAR / MOBILE BOTTOM SHEET ================= -->
-  <aside id="sidebar" aria-label="Πρόγραμμα ταξιδιού και πληροφορίες" class="sidebar-panel fixed z-40 glass-panel flex flex-col overflow-hidden
-      bottom-0 left-0 right-0 h-[76dvh] rounded-t-[28px] border-b-0
-      md:top-[68px] md:bottom-4 md:left-3 md:right-auto md:w-[372px] md:h-auto md:rounded-3xl md:border-b">
+  <!-- Mobile Sidebar Dim Backdrop (tap outside sheet to dismiss cleanly) -->
+  <div id="sidebar-backdrop" class="sidebar-backdrop fixed inset-0 z-[45] bg-black/55 backdrop-blur-[2px] md:hidden"></div>
 
-    <!-- Mobile drag indicator -->
-    <div class="md:hidden flex justify-center pt-2.5 pb-1 shrink-0">
-      <div class="w-11 h-1 rounded-full bg-white/25"></div>
+  <!-- ================= LEFT SIDEBAR / MOBILE BOTTOM SHEET ================= -->
+  <aside id="sidebar" aria-label="Πρόγραμμα ταξιδιού και πληροφορίες" class="sidebar-panel fixed z-50 md:z-40 glass-panel flex flex-col overflow-hidden
+      bottom-0 left-0 right-0 h-[82dvh] max-h-[calc(100dvh-56px)] rounded-t-[26px] border-b-0
+      md:top-[108px] lg:top-[64px] md:bottom-4 md:left-3 md:right-auto md:w-[372px] md:h-auto md:max-h-none md:rounded-3xl md:border-b">
+
+    <!-- Mobile drag-to-close handle -->
+    <div id="sidebar-drag-handle" class="md:hidden flex justify-center pt-2.5 pb-1.5 shrink-0 cursor-pointer touch-none">
+      <div class="w-11 h-1 rounded-full bg-white/30"></div>
     </div>
 
     <!-- Sidebar Header -->
-    <div class="px-3.5 pt-2 pb-2.5 border-b border-champagne/15 shrink-0">
-      <div class="flex items-center justify-between mb-2">
+    <div class="px-3.5 pt-1 md:pt-2.5 pb-2 border-b border-champagne/15 shrink-0">
+      <div class="flex items-center justify-between mb-1.5">
         <div class="flex items-center gap-2 min-w-0">
           <span aria-hidden="true" class="w-2 h-2 rounded-full bg-champagne pulse-gold shrink-0"></span>
-          <h2 class="font-serif text-xl font-semibold text-ivory tracking-wide truncate">Οδηγός Παρέας</h2>
+          <h2 class="font-serif text-lg sm:text-xl font-semibold text-ivory tracking-wide truncate">Οδηγός Παρέας</h2>
         </div>
         <button id="btn-close-sidebar" type="button" aria-label="Κλείσιμο μενού"
-          class="p-1.5 rounded-xl text-ivory/65 hover:text-ivory hover:bg-white/10 transition-colors shrink-0">
+          class="w-8 h-8 rounded-xl flex items-center justify-center text-ivory/70 hover:text-ivory hover:bg-white/10 transition-colors shrink-0">
           <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2"
             viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -254,7 +258,7 @@
 
       <!-- Home Address & Countdown Strip -->
       <div
-        class="mb-2.5 px-2.5 py-1.5 rounded-xl bg-champagne/10 border border-champagne/25 flex items-center justify-between gap-2 text-[11px]">
+        class="mb-2 px-2.5 py-1 rounded-xl bg-champagne/10 border border-champagne/25 flex items-center justify-between gap-2 text-[11px]">
         <span class="text-champagne font-semibold truncate">🏠 3 Rue Saint-Hyacinthe, 75001</span>
         <span id="countdown-mobile" class="font-mono text-ivory font-semibold shrink-0">--</span>
       </div>
@@ -269,7 +273,7 @@
           class="sidebar-tab py-1.5 px-2 rounded-xl text-xs font-semibold text-ivory/75 hover:text-ivory transition-all flex items-center justify-center gap-1">
           <span>Εισιτήρια</span>
           <span id="bookings-badge"
-            class="text-[10px] px-1.5 py-0.2 rounded-full bg-champagne/20 text-champagne">7/10</span>
+            class="text-[10px] px-1.5 py-0.5 rounded-full bg-champagne/20 text-champagne leading-none">7/10</span>
         </button>
         <button type="button" role="tab" aria-selected="false" data-tab="insider"
           class="sidebar-tab py-1.5 px-2 rounded-xl text-xs font-semibold text-ivory/75 hover:text-ivory transition-all">
@@ -279,10 +283,10 @@
     </div>
 
     <!-- Progress, Live Paris Alert & 4-Friend Share Sync Strip -->
-    <div id="progress-strip" class="px-4 py-2.5 bg-white/[0.03] border-b border-white/5 shrink-0 space-y-2">
+    <div id="progress-strip" class="px-3.5 py-2 bg-white/[0.03] border-b border-white/10 shrink-0 space-y-1.5">
       <div class="flex items-center justify-between gap-2 text-[11px]">
         <span class="text-ivory/70 font-medium">Πρόοδος Παρέας</span>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5">
           <span id="progress-text" class="text-champagne font-bold">0 / 22 στάσεις (0%)</span>
           <button id="btn-share-sync" type="button" aria-label="Κοινοποίηση και συγχρονισμός προόδου παρέας"
             class="px-2 py-0.5 rounded-lg bg-white/10 hover:bg-champagne/20 text-[10px] font-semibold text-ivory/90 hover:text-champagne border border-white/10 transition-all active:scale-95"
@@ -307,11 +311,11 @@
       </div>
     </div>
 
-    <!-- TAB 1: ITINERARY -->
-    <div id="tab-itinerary" class="flex-1 overflow-y-auto custom-scroll p-3 pb-8 space-y-4"></div>
+    <!-- TAB 1: ITINERARY (min-h-0 fixes WebKit/iOS flexbox scrolling!) -->
+    <div id="tab-itinerary" class="flex-1 min-h-0 overflow-y-auto custom-scroll px-3 pt-0 pb-10 space-y-3"></div>
 
     <!-- TAB 2: TICKETS, BOOKINGS & EU ID REMINDER -->
-    <div id="tab-bookings" class="hidden flex-1 overflow-y-auto custom-scroll p-3.5 pb-8 space-y-3">
+    <div id="tab-bookings" class="hidden flex-1 min-h-0 overflow-y-auto custom-scroll p-3.5 pb-10 space-y-3">
       <div class="rounded-2xl bg-champagne/10 border border-champagne/30 p-3">
         <h3 class="font-serif text-lg font-semibold text-champagne flex items-center gap-2">
           <span aria-hidden="true">🎟️</span> Κρατήσεις &amp; Ταυτότητα (EU &lt;26)
@@ -326,7 +330,7 @@
     </div>
 
     <!-- TAB 3: SECRET SAUCE INSIDER TIPS -->
-    <div id="tab-insider" class="hidden flex-1 overflow-y-auto custom-scroll p-3.5 pb-8 space-y-3">
+    <div id="tab-insider" class="hidden flex-1 min-h-0 overflow-y-auto custom-scroll p-3.5 pb-10 space-y-3">
       <div class="rounded-2xl bg-gradient-to-br from-champagne/15 to-roseParis/15 border border-champagne/30 p-3.5">
         <h3 class="font-serif text-xl font-semibold text-champagne">Paris December Secret Sauce</h3>
         <p class="text-xs text-ivory/80 mt-1 leading-relaxed">
@@ -450,34 +454,34 @@
       </div>
     </div>
 
-    <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-white/10">
-      <div class="flex items-center gap-1.5">
+    <div class="flex items-center justify-between gap-1.5 pt-1.5 border-t border-white/10">
+      <div class="flex items-center gap-1 sm:gap-1.5 min-w-0">
         <button id="btn-card-visited" type="button"
-          class="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 bg-white/10 hover:bg-white/15 text-ivory">
+          class="px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 bg-white/10 hover:bg-white/15 text-ivory shrink-0">
           <span id="card-visited-icon" aria-hidden="true">○</span>
-          <span id="card-visited-text">Επισκεφθήκαμε</span>
+          <span id="card-visited-text">Σήμανση ✓</span>
         </button>
         <a id="btn-card-maps" href="#" target="_blank" rel="noopener noreferrer"
-          class="px-2.5 py-1.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1 bg-sapphire/15 border border-sapphire/35 text-sapphire hover:bg-sapphire/25 transition-all">
+          class="px-2 sm:px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold inline-flex items-center gap-1 bg-sapphire/15 border border-sapphire/35 text-sapphire hover:bg-sapphire/25 transition-all shrink-0">
           <span aria-hidden="true">🗺️</span>
-          <span>Maps</span>
+          <span class="hidden sm:inline">Maps</span>
         </a>
         <a id="btn-card-directions" href="#" target="_blank" rel="noopener noreferrer"
-          class="px-2.5 py-1.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1 bg-emeraldParis/15 border border-emeraldParis/35 text-emeraldParis hover:bg-emeraldParis/25 transition-all"
+          class="px-2 sm:px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold inline-flex items-center gap-1 bg-emeraldParis/15 border border-emeraldParis/35 text-emeraldParis hover:bg-emeraldParis/25 transition-all shrink-0"
           title="Οδηγίες διαδρομής από την προηγούμενη στάση">
           <span aria-hidden="true">🧭</span>
           <span class="hidden sm:inline">Οδηγίες</span>
         </a>
       </div>
 
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
         <button id="btn-prev-stop" type="button" aria-label="Προηγούμενη στάση"
-          class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-champagne/20 hover:text-champagne text-xs font-semibold transition-all active:scale-95 flex items-center gap-1">
+          class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-champagne/20 hover:text-champagne text-xs font-semibold transition-all active:scale-95 flex items-center gap-1">
           <span aria-hidden="true">←</span>
           <span class="hidden sm:inline">Προηγ.</span>
         </button>
         <button id="btn-next-stop" type="button" aria-label="Επόμενη στάση"
-          class="px-3 py-1.5 rounded-xl bg-champagne text-midnight hover:bg-amber-200 text-xs font-bold transition-all active:scale-95 flex items-center gap-1">
+          class="px-2.5 py-1.5 rounded-xl bg-champagne text-midnight hover:bg-amber-200 text-xs font-bold transition-all active:scale-95 flex items-center gap-1">
           <span class="hidden sm:inline">Επόμενη</span>
           <span aria-hidden="true">→</span>
         </button>
